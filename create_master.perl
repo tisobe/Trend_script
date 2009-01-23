@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 22, 2008						#
+#		last update: Jan 23, 2008						#
 #											#
 #########################################################################################
 
@@ -77,8 +77,10 @@ if($range =~ /f/i){
 	print OUT "mv $www_dir/weekly_results_temp $www_dir/weekly_results\n";
 }
 
-print OUT "\n";
-print OUT "perl $bin_dir/find_limit_envelope_mk_html.perl\n";
+if($range =~ /f/i){
+	print OUT "\n";
+	print OUT "perl $bin_dir/find_limit_envelope_mk_html.perl\n";
+}
 
 close(OUT);
 
