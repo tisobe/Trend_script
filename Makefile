@@ -5,7 +5,7 @@ TASK = FIND_LIMT_ENVELOPE
 
 include /data/mta/MTA/include/Makefile.MTA
 
-BIN  = find_limit_envelope.perl find_limit_envelope_control_deriv.perl find_limit_envelope_control_ds.perl find_limit_envelope_control_sun.perl find_limit_envelope_mk_html.perl find_limit_envelope_sun_angle.perl
+BIN  = find_limit_envelope.perl find_limit_envelope_control_deriv.perl find_limit_envelope_control_ds.perl find_limit_envelope_control_sun.perl find_limit_envelope_mk_html.perl find_limit_envelope_sun_angle.perl find_limit_violation_table.perl
 
 DOC  = README
 

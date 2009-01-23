@@ -1,5 +1,16 @@
 #!/usr/bin/perl 
 
+#########################################################################################
+#											#
+#	find_limit_violation_table.perl: create a html table of yellow violation	#
+#											#
+#		author: t. isobe (tisobe@cfa.harvard.edu)				#
+#											#
+#		last update: Jan 23, 2009						#
+#											#
+#########################################################################################
+
+
 #
 #---- directory
 #
