@@ -6,7 +6,7 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Jan 22, 2009								#
+#		last update: Jan 23, 2009								#
 #													#
 #########################################################################################################
 
@@ -138,10 +138,11 @@ print TOP "those of the quaterly data are updated weekly, and those of the weekl
 print TOP "</ul>\n";
 
 
-
-
-
-
+print TOP "<p>\n";
+print TOP "If you like to check all yellow violations, go to \n";
+print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/violation_table.html'>\n";
+print TOP "Estimated Date of Yellow Limit Violations</a> page.\n";
+print TOP "</p>\n";
 
 
 print TOP "<hr><BR>\n";
