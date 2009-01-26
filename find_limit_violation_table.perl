@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 23, 2009						#
+#		last update: Jan 26, 2009						#
 #											#
 #########################################################################################
 
@@ -103,6 +103,7 @@ foreach $ent (@main_list){
 		@btemp = split(/\s+/, $_);
 		$name  = $btemp[0];
 		$name2 = "$name".'_avg';
+		$name2 = lc($name2);
 		$name3 = uc($name2);
 
 		$bot   = ${data.$name2}{lower}[0];
