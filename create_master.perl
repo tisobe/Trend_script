@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 23, 2008						#
+#		last update: Jan 26, 2008						#
 #											#
 #########################################################################################
 
@@ -80,6 +80,7 @@ if($range =~ /f/i){
 if($range =~ /f/i){
 	print OUT "\n";
 	print OUT "perl $bin_dir/find_limit_envelope_mk_html.perl\n";
+	print OUT "perl $bin_dir/find_limit_violation_table.perl\n";
 }
 
 close(OUT);
