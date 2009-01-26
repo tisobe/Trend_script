@@ -40,6 +40,34 @@ $chk_date  = $this_year + ($ydate + 3)/$y_length;     #---- add a few days to ma
 
 $chk_date2 = $chk_date + 2;
 
+#
+#---- find lower and upper limits
+#
+
+open(FH, "/data/mta/Test/op_limits.db");
+
+OUTER:
+while(<FH>){
+        chomp $_;
+        @l_temp = split(/\s+/, $_);
+        if($l_temp[0] =~ /\#/){
+                next OUTER;
+        }
+	$name   = lc($l_temp[0]);
+        $y_low  = $l_temp[1];
+        $y_top  = $l_temp[2];
+        $r_low  = $l_temp[3];
+        $r_top  = $l_temp[4];
+
+	%{limit.$name} = (y_low =>["$y_low"],
+			  y_top =>["$y_top"],
+			  r_low =>["$r_low"],
+			  r_top =>["$r_top"]
+			);
+
+}
+close(FH);
+
 
 #
 #---- find violations
@@ -126,7 +154,8 @@ foreach $ent (@main_list){
 		@dtemp = split(/_list/, $ent);
 		print OUT "<h3>$dtemp[0]</h3>\n";
 		print OUT "<table border=2, cellpadding=2, cellspacing=2>\n";
-		print OUT "<tr><th>MSID</th><th>Lower Limit</th><th>Upper Limit</th></tr>\n";
+		print OUT "<tr><th>MSID</th><th>Lower Limit</th><th>(Limit Value)</th>";
+		print OUT "<th>Upper Limit</th><th>(Limit Value)</th></tr>\n";
 
 		for($i = 0; $i < $v_cnt; $i++){
 			$bot   = ${data.$msid[$i]}{lower}[0];
@@ -157,11 +186,19 @@ foreach $ent (@main_list){
 			}else{
 				print OUT "<td>$bot</td>\n";
 			}
+			$msid_lc = lc($msid[$i]);
+			$msid_lc =~ s/_avg//;
+
+			if($msid_lc =~ /hrc\./){
+				$msid_lc = s/hrc\.//;
+			}
+			print OUT "<td>${limit.$msid_lc}{y_low}[0]</td>\n";
 			if($top =~ /\d/ && $top < $chk_date2){
 				print OUT "<td><b><font color=red>$top</font></b></td>\n";
 			}else{
 				print OUT "<td>$top</td>\n";
 			}
+			print OUT "<td>${limit.$msid_lc}{y_top}[0]</td>\n";
 			print OUT "</tr>\n";
 		}
 		print OUT "</table>\n";
