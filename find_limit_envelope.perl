@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jan 22, 2009							#
+#		last update Mar 11, 2009							#
 #												#
 #################################################################################################
 
@@ -17,8 +17,10 @@ use PGPLOT;
 #--- directory setting
 #
 
-$www_dir  = '/data/mta/www/mta_envelope_trend/';
-#$www_dir  = './';
+$www_dir1 = '/data/mta/www/mta_envelope_trend/';
+$www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
+$save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
+
 
 #
 #--- setting:
@@ -38,6 +40,10 @@ $out_range    = 0.2;		#--- when calcurate the envelopes, how much sigma out from
 				#--- from the average position you want to incude in the computation.
 				#--- the larger the vale, far from the average, and wider envelopes.
 
+$limit_table1 = "/data/mta/Test/op_limits.db";
+$limit_table2 = "$save_dir/limit_table";
+
+
 #------------------------------------------------------------------------------------------------
 
 #
@@ -49,6 +55,23 @@ $col    = $ARGV[1];		#--- data column name e.g. oobthr44_avg
 $nterms = $ARGV[2];		#--- degree of polynomial fit, 2 or 3 (linear and quad)
 $lim_c  = $ARGV[3];		#--- operational limit: yellow (y) or red (r) 
 $range  = $ARGV[4];		#--- whether this is full, quarterly, or weekly
+$lim_s  = $ARGV[5];		#--- limit selection: mta or op
+
+
+#
+#--- set which limit table to use
+#
+
+if($lim_s =~ /mta/i){
+	$www_dir     = $www_dir1;
+	$limit_table = $limit_table1;
+}elsif($lim_s =~ /op/i){
+	$www_dir     = $www_dir2;
+	$limit_table = $limit_table2;
+}else{
+	$www_dir     = $www_dir2;
+	$limit_table = $limit_table2;
+}
 
 #
 #--- if it is not a full range plot, give winder envelope to cover the
@@ -127,7 +150,7 @@ if($range =~ /f/i){
 #
 
 @break_point = ($datastart);
-$m           = 5;
+$m           = 6;
 $num_break   = 0;
 OUTER:
 while($ARGV[$m] =~ /\d/ && $ARGV[$m] ne ''){
@@ -183,7 +206,7 @@ $out_data  = "$c_name".'_fitting_results';	#--- fitted result output file name
 #---- find lower and upper limits
 #
 
-open(FH, "/data/mta/Test/op_limits.db");
+open(FH, "$limit_table");
 
 OUTER:
 while(<FH>){
@@ -199,7 +222,7 @@ while(<FH>){
 close(FH);
 
 if($line =~ /$c_name/i){
-        @l_temp = split(/\s+/, $line);
+	@l_temp = split(/\s+/, $line);
         $y_low  = $l_temp[1];
         $y_top  = $l_temp[2];
         $r_low  = $l_temp[3];
@@ -448,7 +471,7 @@ if($total == 0){
 	print OUT "Fitting Failed\n";
 	close(OUT);
 
-	system("cp /data/mta/Script/Fitting/Trend_script/Save_data//null_data_s.gif $out_name");
+	system("cp $save_dir/null_data_s.gif $out_name");
 	exit 1;
 }
 
@@ -465,7 +488,7 @@ if($chk > 0){
 	print OUT "Fitting Failed\n";
 	close(OUT);
 
-	system("cp /data/mta/Script/Fitting/Trend_script/Save_data//null_data_s.gif $out_name");
+	system("cp $save_dir/null_data_s.gif $out_name");
 	exit 1;
 }
 
@@ -1665,14 +1688,6 @@ sub boxed_interval_binning{
 				$wmax = $test_data[$i];
 			}
 		}elsif($test_time[$i] >= $end){
-			OUTER:
-			while($test_time[$i] >= $end){
-				$start = $end   + $box_length;
-				$end   = $start + $box_length;
-				if($test_time[$i] >= $start && $test_time[$i] < $end){
-					last OUTER;
-				}
-			}
 				
 			$mid   = $start + 0.5 * $box_length;
 			if($wmin < 100000 && $wmax > -100000){
@@ -1681,9 +1696,16 @@ sub boxed_interval_binning{
 				push(@box_max, $wmax);
 				$w_cnt++;
 			}
-			$start = $end   + $box_length;
-			$end   = $start + $box_length;
-			$wmin = 1e14;
+
+			OUTER:
+			while($test_time[$i] >= $end){
+				$start = $end;
+				$end   = $start + $box_length;
+				if($test_time[$i] >= $start && $test_time[$i] < $end){
+					last OUTER;
+				}
+			}
+			$wmin =  1e14;
 			$wmax = -1e14;
 			
 			if($data[$i] < $wmin){

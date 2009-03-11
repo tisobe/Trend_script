@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 22, 2009						#
+#		last update: Mar 11, 2009						#
 #											#
 #########################################################################################
 
@@ -122,6 +122,22 @@ while(<FH>){
 }
 close(FH);
 
+#
+#--- find a path to the previous data location
+#
+@atemp  = split(/_list/, $b_list);
+$ms_dir = uc (@atemp[0]);
+
+if($range =~ /f/i){
+        $s_dir = 'Full_range';
+}elsif($range =~ /q/i){
+        $s_dir = 'Quarterly';
+}elsif($range =~ /w/i){
+        $s_dir = 'Weekly';
+}
+
+$saved_dir = "$www_dir"."$s_dir/"."$ms_dir/"."Fits_data/";
+
 for($i = 0; $i < $total; $i++){
 	$msid_list[$i]= uc($msid_list[$i]);
 	$msid   = lc($msid_list[$i]);
@@ -135,20 +151,61 @@ for($i = 0; $i < $total; $i++){
 	}
 	$col2   = "$msid".'_avg';
 	$fits   = "$msid".'.fits';
+	$fitsgz = "$fits".'.gz';
+#
+#--- find the last entry of the data
+#
+	$line   = "$saved_dir/$fitsgz".'[cols time]';
+	system("dmstat \"$line\" > zstat");
+	open(IN, "./zstat");
+	OUTER:
+	while(<IN>){
+		chomp $_;
+		if($_ =~ /max/){
+			@atemp = split(/\s+/, $_);
+			$last_entry = $atemp[2];
+			last OUTER;
+		}
+	}
+	close(IN);
 
-	$line = "columns=$col timestart=$start timestop=$end";
+	$line = "columns=$col timestart=$last_entry timestop=$end";
 	
 	$fchk = `ls `;
 	if($fchk =~/temp.fits/){
 		system("rm temp.fits");
 	}
 
+#
+#--- extract data from the last entry point to today
+#
+
 	system("dataseeker.pl infile=test outfile=temp.fits search_crit=\"$line\" ");
 
-	system("perl $bin_dir/find_limit_envelope.perl temp.fits $col2 $degree[$i]  $limit $range $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+#
+#--- add the extracted data to the past data
+#
+	system("dmmerge \"$saved_dir/$fitsgz temp.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
 
-	system("mv temp.fits        $out_dir/Fits_data/$fits");
+#
+#--- trim off the part we do not need (for quaterly and weekly)
+#
+	if($range =~ /f/){
+		system("mv merged.fits trimed.fits");
+	 }else{
+		$line = "merged.fits".'[time='."$start:$end".']';
+		system("dmcopy \"$line\" outfile=trimed.fits clobber=yes");
+	}
+#
+#---- now call the script actually plots the data
+#
+
+	system("perl $bin_dir/find_limit_envelope.perl trimed.fits $col2 $degree[$i]  $limit $range mta $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+
+	system("mv trimed.fits      $out_dir/Fits_data/$fits");
 	system("gzip -f             $out_dir/Fits_data/$fits");
 	system("mv *gif             $out_dir/Plots/");
 	system("mv *fitting_results $out_dir/Results/");
+	system("rm merged.fits zstat");
+
 }

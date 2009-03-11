@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 22, 2009						#
+#		last update: Mar 11, 2009						#
 #											#
 #########################################################################################
 
@@ -76,7 +76,7 @@ for($i = 0; $i < $total; $i++){
 	}
 	$fits   = "/data/mta4/Deriv/$file_nam".'.fits';
 
-	system("perl $bin_dir/find_limit_envelope.perl $fits $col $degree[$i]  $limit  $range $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("perl $bin_dir/find_limit_envelope.perl $fits $col $degree[$i]  $limit  $range mta  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 	system("mv *gif             $out_dir/Plots/");
 	system("mv *fitting_results $out_dir/Results/");

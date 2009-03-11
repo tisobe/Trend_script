@@ -6,7 +6,7 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Jan 23, 2009								#
+#		last update: Mar 11, 2009								#
 #													#
 #########################################################################################################
 
@@ -14,11 +14,12 @@
 #--- set directory location etc
 #
 
-$www_dir = '/data/mta_www/mta_envelope_trend/';
-$mta_dir = '/data/mta/Script/Fitting/Trend_script/';
+$www_dir  = '/data/mta_www/mta_envelope_trend/';
+$www_dir2 = '/data/mta_www/mta_envelope_trend/SnapShot/';
+$mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
 
-$inlist  = "$mta_dir/Save_data/dataseeker_input_list";
-$inlist2 = "$mta_dir/Save_data/deriv_input_list";
+$inlist   = "$mta_dir/Save_data/dataseeker_input_list";
+$inlist2  = "$mta_dir/Save_data/deriv_input_list";
 
 #
 #---- find today's year date
@@ -64,7 +65,7 @@ close(FH);
 #---- open the top html page
 #
 
-open(TOP, ">$www_dir/mta_envelope_trend.html");
+open(TOP, ">$www_dir/mta_envelope_trend_test.html");
 print TOP "<html>\n";
 print TOP "<body>\n\n";
 print TOP "<h2>MTA Trending: Envelope Trending</h2><br>\n\n";
@@ -141,7 +142,10 @@ print TOP "</ul>\n";
 print TOP "<p>\n";
 print TOP "If you like to check all yellow violations, go to \n";
 print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/violation_table.html'>\n";
-print TOP "Estimated Date of Yellow Limit Violations</a> page.\n";
+print TOP "MTA Estimated Date of Yellow Limit Violations</a> page.\n";
+print TOP " or \n";
+print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/SnapShot/violation_table.html'>\n";
+print TOP "Snapshot Estimated Date of Yellow Limit Violations</a> page.\n";
 print TOP "</p>\n";
 
 
@@ -150,12 +154,13 @@ print TOP "<hr><BR>\n";
 print TOP "<center>\n";
 print TOP "<table cellspacing=30 >\n";
 print TOP "<tr><th>\n";
-print TOP "<h2>Main Data Trend</h2>\n";
+print TOP "<h2>MTA Main Data Trend</h2>\n";
 print TOP "</th><th>\n";
-print TOP "<h2>Secondary Data Trend</h2>\n";
+print TOP "<h2>MTA Secondary Data Trend</h2>\n";
 print TOP "</th></tr>\n";
 print TOP "<tr><td valign=top>\n";
 
+print TOP "<center>\n";
 print TOP "<table border=2 cellpadding=2 cellspan=2>\n";
 
 $k = 0; 
@@ -292,6 +297,7 @@ while(<FH>){
 }
 
 print TOP "</table>\n";
+print TOP "</center>\n";
 
 print TOP "</td><td valign=top>\n";
 
@@ -300,8 +306,8 @@ print TOP "</td><td valign=top>\n";
 #----- data from /data/mta4/Derive
 #
 
-#print TOP "<h2>Secondary Data Trend</h2>\n";
 
+print TOOP "<center>\n";
 print TOP "<table border=2 cellpadding=2 cellspan=2>\n";
 
 $k = 0; 
@@ -444,18 +450,198 @@ while(<FH>){
 	}
 	print OUT "</table>\n";
 	print OUT "<br><br>\n";
-	print OUT "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/mta_envelope_trend.html'>Back to a Top Page</a>\n";
+	print OUT "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/mta_envelope_trend2.html'>Back to a Top Page</a>\n";
 	close(OUT);
 }
-
-print TOP "</table>\n";
 
 print TOP "</td></tr>\n";
 print TOP "</table>\n";
 print TOP "</center>\n";
 
+print TOP "</td></tr>\n";
+print TOP "<tr><td>\n";
+
+
+#-------------------------------------------------------------------------------
+
+#
+#---- read all about limit violation for op
+#
+
+open(FH, "$www_dir2/full_range_results");
+
+while(<FH>){
+	chomp $_;
+	@atemp = split(/<>/, $_);
+	if($atemp[0] =~ /_AVG/){
+		@btemp = split(/_AVG/, $atemp[0]);
+	}else{
+		@btemp = split(/_avg/, $atemp[0]);
+	}
+
+	$low   = $atemp[9];
+	$top   = $atemp[10];
+	$name  = lc($btemp[0]);
+	%{limit.$name} = (low =>["$low"], top => ["$top"]);
+}
+close(FH);
+
+
+
+print TOP "<hr><BR>\n";
+
+print TOP "<center>\n";
+print TOP "<table cellspacing=30 >\n";
+print TOP "<tr><th>\n";
+print TOP "<h2>Snapshot  Data Trend</h2>\n";
+print TOP "</th><th>\n";
+print TOP "</th></tr>\n";
+print TOP "<tr><td valign=top>\n";
+
+print TOP "<table border=2 cellpadding=2 cellspan=2>\n";
+
+$k = 0; 
+open(FH, "$inlist");
+while(<FH>){
+	chomp $_;
+	$infile = $_;
+
+	@name_list = ();
+	@in_list   = ();
+	$cnt       = 0;
+#
+#---- read indivisual entries
+#
+	open(IN, "$mta_dir/Save_data/Break_points/$infile");
+	while(<IN>){
+		chomp $_;
+		@atemp = split(/\s+/, $_);
+		$msid  = lc($atemp[0]);
+		$name  = "$msid".'_plot.gif';
+		push(@name_list, $msid);
+		push(@in_list, $name);
+		$cnt++;
+	}
+	close(IN);
+
+	@atemp    = split(/_list/, $infile);
+	$data_dir = uc ($atemp[0]);
+	$table    = "$atemp[0]".'_table.html';
+
+	$chk = 2.0 * int(0.5 * $k);
+	if($chk == $k){
+		print TOP "<tr><td><a href='./Html_dir2/$table'>$data_dir</a></td>\n";
+	}else{
+		print TOP "<td>&#160</td>\n";
+		print TOP "<td><a href='./Html_dir2/$table'>$data_dir</a></td></tr>\n";
+	}
+	$k++;
+#
+#---- create indivisual html pages
+#
+	open(OUT, ">$www_dir/Html_dir2/$table");
+
+	print OUT "<html>\n";
+	print OUT "<body>\n\n";
+
+#
+#--- java script header
+#
+	print OUT '<script language="JavaScript">',"\n";
+	print OUT '  function WindowOpener(imgname) {',"\n";
+	print OUT '    msgWindow = open("","displayname","toolbar=no,directories=no,menubar=no,location=no,scrollbars=no,status=no,width=750,height=600,resize=no");',"\n";
+	print OUT '    msgWindow.document.clear();',"\n";
+	print OUT '    msgWindow.document.write("<HTML><TITLE>Trend plot:   "+imgname+"</TITLE>");',"\n";
+	print OUT "    msgWindow.document.write(\"<BODY TEXT='white' BGCOLOR='white'>\");","\n";
+	print OUT "    msgWindow.document.write(\"<IMG SRC='\"+imgname+\"' BORDER=0><P></BODY></HTML>\");","\n";
+	print OUT '    msgWindow.document.close();',"\n";
+	print OUT '    msgWindow.focus();',"\n";
+	print OUT '  }',"\n";
+	print OUT '</script>',"\n";
+	print OUT "\n\n";
+
+
+	print OUT "<h2>$data_dir</h2>\n";
+	print OUT "<table border=1 cellpadding=2 cellspacing=2>\n";
+	print OUT "<tr><th>MSID</th>";
+	print OUT "<th>Entire Period</th>";
+	print OUT "<th>Last Quarter</th>";
+	print OUT "<th>Recent Week</th>";
+	print OUT "<th>Limit Violation</th></tr>\n";
+	
+	OUTER:
+	for($i = 0; $i < $cnt; $i++){
+	
+		$low = ${limit.$name_list[$i]}{low}[0];
+		$top = ${limit.$name_list[$i]}{top}[0];
+	
+		$warning = 0;
+		if($low =~ /\d/ || $top =~ /\d/){
+			$warning = 1;
+		}
+	
+		if($warning == 0){
+			print OUT "<tr>\n<th>$name_list[$i]</th>\n";
+		}else{
+			print OUT "<tr><th><font color=red>$name_list[$i]</font></th>\n";
+		}
+	
+		$h_name = '../SnapShot/Full_range/'."$data_dir".'/Plots/'."$in_list[$i]";
+		print OUT "<td><a href=\"javascript:WindowOpener('$h_name')\">Full_range</a></td>\n";
+	
+		$h_name = '../SnapShot/Quarterly/'."$data_dir".'/Plots/'."$in_list[$i]";
+		print OUT "<td><a href=\"javascript:WindowOpener('$h_name')\">Last Quarter</a></td>\n";
+	
+		$h_name = '../SnapShot/Weekly/'."$data_dir".'/Plots/'."$in_list[$i]";
+		print OUT "<td><a href=\"javascript:WindowOpener('$h_name')\">Recent Week</a></td>\n";
+	
+#
+#---- printing upper and/or lower limit violations
+#
+		if($warning == 0){
+			print OUT "<td>no violation</td>\n";
+		}else{
+			print OUT "<td>";
+			$chk = 0;
+			if($low =~ /\d/){
+				if($low <= $today){
+					print OUT "<font color=red>Low: in Violation</font>";
+				}else{
+					$out = sprintf "%5.2f", $low;
+					print OUT  "<font color=red>Low: $out</font>";
+				}
+				$chk = 1;
+			}
+			if($top =~ /\d/){
+				if($chk > 0){
+					print OUT "<br>";
+				}
+				if($top <= $today){
+					print OUT "<font color=red>Top:in  Violation</font>";
+				}else{
+					$out = sprintf "%5.2f", $top;
+					print OUT  "<font color=red>Top: $out</font>";
+				}
+			}
+			print OUT "</td>\n";
+		}
+		print OUT "</tr>\n";
+	}
+	print OUT "</table>\n";
+	print OUT "<br><br>\n";
+	print OUT "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/mta_envelope_trend.html'>Back to a Top Page</a>\n";
+	close(OUT);
+}
+
+
+print TOP "</td></tr>\n";
+print TOP "</table>\n";
+
+print TOP "</table>\n";
+print TOP "</center>\n";
+
 print TOP "<br><hr><br>\n";
-print TOP "Last Update: Jan 22, 2009<br>\n";
+print TOP "Last Update: Mar 11, 2009<br>\n";
 print TOP "If you have questions, contact T. Isobe (<a href='mailto:isobe\@head.cfa.harvard.edu'>";
 print TOP "isobe\@head.cfa.harvard.edu</a>)\n";
 

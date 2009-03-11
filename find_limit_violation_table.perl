@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 26, 2009						#
+#		last update: Mar 11, 2009						#
 #											#
 #########################################################################################
 
@@ -18,7 +18,26 @@
 $bin_dir  = '/data/mta/MTA/bin/';
 $mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
 $save_dir = "$mta_dir/Save_data/";
-$www_dir  = '/data/mta_www/mta_envelope_trend/';
+$www_dir1 = '/data/mta_www/mta_envelope_trend/';
+$www_dir2 = '/data/mta_www/mta_envelope_trend2/';
+
+#
+#---- read argument
+#
+
+$lim_slc  = $ARGV[0];	#--- which limit table to use mta or op
+
+#
+#---- select a limit table ans output web directory
+#
+
+if($lim_slc =~ /mta/){
+	$www_dir = $www_dir1;
+	$limit_table = '/data/mta/Test/op_limits.db';
+}else{
+	$www_dir = $www_dir2;
+	$limit_table = "$save_dir/limit_table";
+}
 
 #
 #---- find today's year date
@@ -44,7 +63,7 @@ $chk_date2 = $chk_date + 2;
 #---- find lower and upper limits
 #
 
-open(FH, "/data/mta/Test/op_limits.db");
+open(FH, "$limit_table");
 
 OUTER:
 while(<FH>){
@@ -88,7 +107,7 @@ close(FH);
 $input =` cat $mta_dir/Save_data/dataseeker_input_list $mta_dir/Save_data/deriv_input_list`;
 @main_list = split(/\s+/, $input);
 
-open(OUT, ">/data/mta/www/mta_envelope_trend/violation_table.html");
+open(OUT, ">$www_dir/violation_table.html");
 print OUT "<html>\n";
 print OUT "<body>\n";
 
