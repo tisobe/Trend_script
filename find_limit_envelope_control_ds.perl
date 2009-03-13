@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Mar 11, 2009						#
+#		last update: Mar 13, 2009						#
 #											#
 #########################################################################################
 
@@ -152,50 +152,71 @@ for($i = 0; $i < $total; $i++){
 	$col2   = "$msid".'_avg';
 	$fits   = "$msid".'.fits';
 	$fitsgz = "$fits".'.gz';
-#
-#--- find the last entry of the data
-#
-	$line   = "$saved_dir/$fitsgz".'[cols time]';
-	system("dmstat \"$line\" > zstat");
-	open(IN, "./zstat");
-	OUTER:
-	while(<IN>){
-		chomp $_;
-		if($_ =~ /max/){
-			@atemp = split(/\s+/, $_);
-			$last_entry = $atemp[2];
-			last OUTER;
-		}
-	}
-	close(IN);
 
-	$line = "columns=$col timestart=$last_entry timestop=$end";
+#
+#--- check whether the past data file exists
+#
+	$lchk   = `ls -d $saved_dir/*`;
+
+	if($lchk =~ /$fits/){
+#
+#--- if the past data file exits, find the last entry of the data
+#
+		$line   = "$saved_dir/$fitsgz".'[cols time]';
+		system("dmstat \"$line\" > zstat");
+		open(IN, "./zstat");
+		OUTER:
+		while(<IN>){
+			chomp $_;
+			if($_ =~ /max/){
+				@atemp = split(/\s+/, $_);
+				$last_entry = $atemp[2];
+				last OUTER;
+			}
+		}
+		close(IN);
 	
-	$fchk = `ls `;
-	if($fchk =~/temp.fits/){
-		system("rm temp.fits");
-	}
+		$line = "columns=$col timestart=$last_entry timestop=$end";
+		
+		$fchk = `ls `;
+		if($fchk =~/temp.fits/){
+			system("rm temp.fits");
+		}
 
 #
 #--- extract data from the last entry point to today
 #
 
-	system("dataseeker.pl infile=test outfile=temp.fits search_crit=\"$line\" ");
+		system("dataseeker.pl infile=test outfile=temp.fits search_crit=\"$line\" ");
 
 #
 #--- add the extracted data to the past data
 #
-	system("dmmerge \"$saved_dir/$fitsgz temp.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
+		system("dmmerge \"$saved_dir/$fitsgz temp.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
 
 #
 #--- trim off the part we do not need (for quaterly and weekly)
 #
-	if($range =~ /f/){
-		system("mv merged.fits trimed.fits");
-	 }else{
-		$line = "merged.fits".'[time='."$start:$end".']';
-		system("dmcopy \"$line\" outfile=trimed.fits clobber=yes");
+		if($range =~ /f/){
+			system("mv merged.fits trimed.fits");
+	 	}else{
+			$line = "merged.fits".'[time='."$start:$end".']';
+			system("dmcopy \"$line\" outfile=trimed.fits clobber=yes");
+		}
+	}else{
+#
+#--- if this is the first time the data is extracted....
+#
+	
+		$line = "columns=$col timestart=$start timestop=$end";
+		
+		$fchk = `ls `;
+		if($fchk =~/trimed.fits/){
+			system("rm trimed.fits");
+		}
+		system("dataseeker.pl infile=test outfile=trimed.fits search_crit=\"$line\" ");
 	}
+
 #
 #---- now call the script actually plots the data
 #
@@ -206,6 +227,10 @@ for($i = 0; $i < $total; $i++){
 	system("gzip -f             $out_dir/Fits_data/$fits");
 	system("mv *gif             $out_dir/Plots/");
 	system("mv *fitting_results $out_dir/Results/");
-	system("rm merged.fits zstat");
 
+	if($range != /f/){
+		system("rm zstat");
+	}else{
+		system("rm merged.fits zstat");
+	}
 }

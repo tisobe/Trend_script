@@ -1,11 +1,11 @@
 ############################
 # Change the task name!
 ############################
-TASK = FIND_LIMT_ENVELOPE 
+TASK = FIND_LIMIT_ENVELOPE 
 
 include /data/mta/MTA/include/Makefile.MTA
 
-BIN  = find_limit_envelope.perl find_limit_envelope_control_deriv.perl find_limit_envelope_control_ds.perl find_limit_envelope_control_sun.perl find_limit_envelope_mk_html.perl find_limit_envelope_sun_angle.perl find_limit_violation_table.perl
+BIN  = find_limit_envelope.perl find_limit_envelope_control_deriv.perl find_limit_envelope_control_ds.perl find_limit_envelope_control_sun.perl find_limit_envelope_mk_html.perl find_limit_envelope_sun_angle.perl find_limit_violation_table.perl find_limit_envelope_control_plot_only.perl
 
 DOC  = README
 

@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Mar 11, 2009						#
+#		last update: Mar 13, 2009						#
 #											#
 #########################################################################################
 
@@ -71,7 +71,7 @@ for($i = 0; $i < $total; $i++){
 	$msid   = lc($msid_list[$i]);
 	$col    = "$msid_list[$i]".'_AVG';
 	@btemp  = split(//, $col);
-	if($btemp[0] =~ /\d/){
+	if($b_list !~ /comp/ && $btemp[0] =~ /\d/){
 		$col = 'X'."$col";
 	}
 	$fits   = "/data/mta4/Deriv/$file_nam".'.fits';
