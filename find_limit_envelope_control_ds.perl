@@ -16,8 +16,6 @@
 
 $bin_dir  = '/data/mta/MTA/bin/';
 
-$bin_dir  = '/data/mta/Script/Fitting/Test_dir/';
-
 $mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
 $save_dir = "$mta_dir/Save_data/";
 $www_dir  = '/data/mta_www/mta_envelope_trend/';
