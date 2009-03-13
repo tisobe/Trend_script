@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Mar 11, 2009							#
+#		last update Mar 12, 2009							#
 #												#
 #################################################################################################
 
@@ -20,7 +20,6 @@ use PGPLOT;
 $www_dir1 = '/data/mta/www/mta_envelope_trend/';
 $www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
 $save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
-
 
 #
 #--- setting:
@@ -44,6 +43,7 @@ $limit_table1 = "/data/mta/Test/op_limits.db";
 $limit_table2 = "$save_dir/limit_table";
 
 
+
 #------------------------------------------------------------------------------------------------
 
 #
@@ -55,7 +55,7 @@ $col    = $ARGV[1];		#--- data column name e.g. oobthr44_avg
 $nterms = $ARGV[2];		#--- degree of polynomial fit, 2 or 3 (linear and quad)
 $lim_c  = $ARGV[3];		#--- operational limit: yellow (y) or red (r) 
 $range  = $ARGV[4];		#--- whether this is full, quarterly, or weekly
-$lim_s  = $ARGV[5];		#--- limit selection: mta or op
+$lim_s  = $ARGV[5];		#--- limit selection: mta, op, or both
 
 
 #
@@ -68,6 +68,9 @@ if($lim_s =~ /mta/i){
 }elsif($lim_s =~ /op/i){
 	$www_dir     = $www_dir2;
 	$limit_table = $limit_table2;
+}elsif($lim_s =~ /both/i){
+	$www_dir     = $www_dir1;
+	$limit_table = $limit_table1;
 }else{
 	$www_dir     = $www_dir2;
 	$limit_table = $limit_table2;
@@ -163,6 +166,7 @@ while($ARGV[$m] =~ /\d/ && $ARGV[$m] ne ''){
 	}
 }
 $num_break++;
+
 push(@break_point, $end_time);
 
 #
@@ -208,6 +212,7 @@ $out_data  = "$c_name".'_fitting_results';	#--- fitted result output file name
 
 open(FH, "$limit_table");
 
+$line = '';
 OUTER:
 while(<FH>){
         chomp $_;
@@ -382,6 +387,16 @@ if($hchk ==  0){
 		$pos_ratio  = $plus/$total_tmp;
 		$neg_ratio  = $minus/$total_tmp;
 		$zero_ratio = $zero/$total_tmp;
+		$t_int      = 3600;
+		$t_int_mid  = 1800;
+
+		if($range =~ /f/i){
+#
+#--- if it is full range, take one day interval
+#
+			$t_int      = 86400;
+			$t_int_mid  = 43200;
+		}
 		
 #
 #--- if the data have both positive and negative values, or more than 98% of
@@ -389,7 +404,7 @@ if($hchk ==  0){
 #
 		if($neg_ratio > 0.02 || $zero_ratio > 0.99){
 			$begin = $time_tmp[0];
-			$end   = $begin + 3600;
+			$end   = $begin + $t_int;
 			$sum   = $data_tmp[0];
 			$sum_c = 1;
 			for($i = 1; $i < $total_tmp; $i++){
@@ -399,7 +414,7 @@ if($hchk ==  0){
 				}elsif($time_tmp[$i] >= $end){
 					if($sum_c > 0){
 						$avg = $sum/$sum_c;
-						$sec       = $begin + 1800;
+						$sec       = $begin + $t_int_mid;
 						$year_date = sec1998_to_fracyear($sec);
 						if($year_date >= $datastart){
 							push(@time, $year_date);
@@ -1121,6 +1136,8 @@ system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot
 
 system("rm pgplot.ps");
 
+
+
 #
 #--- save fitting results etc in a file
 #--- OUT for human readable, OUT2 for machine friendly
@@ -1260,6 +1277,439 @@ close(OUT);
 close(OUT2);
 
 
+#
+#-------------------p009 plot ---------------------------------------------------
+#
+
+if($lim_s =~ /both/i){
+
+	$out_name2 = "$c_name".'_plot2.gif';            #--- plot file name
+	$out_data2 = "$c_name".'_fitting_results2';     #--- fitted result output file name
+
+#
+#---- find lower and upper limits
+#
+
+	open(FH, "$limit_table2");
+
+	$line = '';
+	OUTER:
+	while(<FH>){
+	 	chomp $_;
+	 	if($_ =~ /^$c_name\b/i){
+		  	@l_temp = split(/\s+/, $_);
+		  	if($l_temp[0] =~ /\#/){
+			   	next OUTER;
+		  	}
+		  	$line = $_;
+	 	}
+	}
+	close(FH);
+	
+	if($line =~ /$c_name/i){
+	 	@l_temp = split(/\s+/, $line);
+	 	$y_low  = $l_temp[1];
+	 	$y_top  = $l_temp[2];
+	 	$r_low  = $l_temp[3];
+	 	$r_top  = $l_temp[4];
+	}else{
+	
+#
+#--- if the limits are not found, set them very wide...
+#
+	 	$y_low  = -1e14;
+	 	$y_top  =  1e14;
+	 	$r_low  = -1e14;
+	 	$r_top  =  1e14;
+	}
+	
+#
+#--- if which limits are used is not specified, use yellow limits
+#
+
+	if($lim_c !~ /r/i || $lim_c !~ /y/i){
+	 	$lim_c = 'y';
+	}
+	
+	if($lim_c =~ /y/){
+	 	$bot = $y_low;
+	 	$top = $y_top;
+	}else{
+	 	$bot = $r_low;
+	 	$top = $r_top;
+	}
+
+
+#
+#---- plotting starts here
+#
+
+	pgbegin(0, '"./pgplot.ps"/cps',1,1);
+	pgsubp(1,1);
+	pgsch(1);
+	pgslw(5);
+	
+	pgenv($xmin, $xmax, $ymin, $ymax, 0, 0);
+
+#
+#--- plot data points
+#
+
+	if($range =~ /f/i){
+	 	for($i = 0; $i < $total; $i++){
+		  	if($data[$i] >= $y_low && $data[$i] <= $y_top){
+			   	pgsci(1);
+		  	}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
+			   	pgsci(2);
+		  	}else{
+			   	pgsci(6);
+		  	}
+		  	pgpt(1,$time[$i], $data[$i], 1);
+		  	pgsci(1);
+	 	}
+	}else{
+	 	pgsch(2);
+	 	pgslw(10);
+	 	OUTER:
+	 	for($i = 0; $i < $total; $i++){
+		  	if($time[$i] < $datastart){
+			   	next OUTER;
+		  	}elsif($time[$i] > $end_time){
+			   	last OUTER;
+		  	}
+	
+		  	$y_part = int($time[$i]);
+		  	$d_part = $time[$i] - $y_part;
+		  	if($y_part > $y_beg){
+			   	$d_part *= $multi2;
+			   	$d_part += $multi;
+		  	}else{
+			   	$d_part *= $multi;
+		  	}
+		  	if($data[$i] >= $y_low && $data[$i] <= $y_top){
+			   	pgsci(1);
+		  	}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
+			   	pgsci(2);
+		  	}else{
+			   	pgsci(6);
+		  	}
+		  	pgpt(1,$d_part, $data[$i], 1);
+		  	pgsci(1);
+	 	}
+	 	pgsch(1);
+	 	pgslw(5);
+	}
+
+
+#
+#---- plot envelopes
+#
+
+	pgsci(4);
+	for($k = 0; $k < $num_break; $k++){
+		$x_range = $break_point[$k+1] - $break_point[$k];
+		$step    = $x_range/100;
+		$n       = 0;
+		$y_est   = ${p_min.$n.$k}  - $widen * $pmin_sig + ${avg_min.$k};
+
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_min.$n.$k} * power($x_adj, $n);
+			}
+			$y_est = $y_est - $widen * $pmin_sig + ${avg_min.$k};
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+	}
+	
+	for($k = 0; $k < $num_break; $k++){
+		$x_range = $break_point[$k+1] - $break_point[$k];
+		$step    = $x_range/100;
+		$n       = 0;
+		$y_est   = ${p_max.$n.$k}  + $widen * $pmax_sig + ${avg_max.$k};
+
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_max.$n.$k} * power($x_adj, $n);
+			}
+			$y_est = $y_est + $widen * $pmax_sig + ${avg_max.$k};
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+	}
+	
+	
+	pgsci(1);
+	
+
+#
+#--- check whether the lower limt will be violated in near future
+#
+
+	if($range =~ /f/i){
+	 	$last	= $num_break -1;
+	 	$bot_excess = '';
+	 	$x_adj      = $xmax + 10 - $break_point[$last];
+	
+	 	$y_est = 0;
+	 	for($n = 0; $n <= $nterms; $n++){
+		  	$y_est += ${p_min.$n.$last} * power($x_adj, $n);
+	 	}
+	 	$y_est = $y_est - $widen * $pmin_sig + $avgy_min;
+	
+	 	$chk   = 0;
+	 	if($y_est < $bot){
+		  	$limit = $bot;
+		  	$nv = 0;
+		  	${a.$nv}   = ${p_min.$nv.$last}- $widen * $pmin_sig + $avgy_min;
+		  	for($n = 1; $n <= $nterms; $n++){
+			   	${a.$n}    = ${p_min.$n.$last};
+		  	}
+		  	$ind	= -1;
+	
+		  	find_cross_point();
+	
+		  	$x_pos += $break_point[$last];
+	
+		  	$bot_excess = sprintf "%5.1f", $x_pos;
+		  	if($bot_excess <= $today){
+			   	if($lim_c =~ /y/){
+				    	pgsci(6);
+				    	pgptxt($xtxt, $ytxt, 0, 0, "Data seem alreday in Lower Yellow  Limit Zone ($bot).");
+			   	}else{
+				    	pgsci(2);
+				    	pgptxt($xtxt, $ytxt, 0, 0, "Data Seem already in Lower Red  Limit Zone ($bot).");
+			   	}
+	
+		  	}else{
+			   	if($lim_c =~ /y/){
+				    	pgsci(6);
+				    	pgptxt($xtxt, $ytxt, 0, 0, "Lower Yellow  Limit ($bot) may be violated around Year: $bot_excess");
+			   	}else{
+				    	pgsci(2);
+				    	pgptxt($xtxt, $ytxt, 0, 0, "Lower Red  Limit ($bot) may be violated around Year: $bot_excess");
+			   	}
+		  	}
+		  	pgsci(1);
+		  	$chk = 1;
+	 	}
+
+#
+#--- check whether the upper limt will be violated in near future
+#
+
+	 	$top_excess = '';
+	 	$x_adj      = $xmax + 10 - $break_point[$last];
+	
+	 	$y_est = 0;
+	 	for($n = 0; $n <= $nterms; $n++){
+		  	$y_est += ${p_max.$n.$last} * power($x_adj, $n);
+	 	}
+	 	$y_est = $y_est +  $widen * $pmax_sig + $avgy_max;
+	
+	 	if($y_est > $top){
+		  	$limit = $top;
+		  	$nv = 0;
+		  	${a.$nv}   = ${p_max.$nv.$last}- $widen * $pmax_sig + $avgy_max;
+		  	for($n = 1; $n <= $nterms; $n++){
+			   	${a.$n}    = ${p_max.$n.$last};
+		  	}
+		  	$ind   = 1;
+	
+		  	find_cross_point();
+	
+		  	$x_pos += $break_point[$last];
+	
+		  	$top_excess = sprintf "%5.1f", $x_pos;
+		  	$ytxt2 = $ytxt;
+		  	if($chk > 0){
+			   	$ytxt2 = $ytxt - 0.05 * $ydiff;
+		  	}
+		  	pgsci(2);
+		  	if($top_excess < $today){
+			   	if($lim_c =~ /y/){
+				    	pgsci(6);
+				    	pgptxt($xtxt, $ytxt2, 0, 0, "Data seem already in Upper Yellow  Limit Zone ($top).");
+			   	}else{
+				    	pgsci(2);
+				    	pgptxt($xtxt, $ytxt, 0, 0, "Data seem already in Upper Red  Limit Zone ($top).");
+			   	}
+		  	}else{
+			   	if($lim_c =~ /y/){
+				    	pgsci(6);
+				    	pgptxt($xtxt, $ytxt2, 0, 0, "Upper Yellow  Limit ($top) may be violated around Year: $top_excess");
+			   	}else{
+				    	pgsci(2);
+				    	pgptxt($xtxt, $ytxt, 0, 0, "Upper Red  Limit ($top) may be violated around Year: $top_excess");
+			   	}
+		  	}
+		  	pgsci(1);
+	 	}
+	}
+
+#
+#--- add major events
+#
+
+	pgsci(5);
+	$head = $ymin + 0.2 * $ydiff;
+	pgrect(2003.4372,2003.5464,$ymin,$head);
+	pgsci(1);
+	pgptxt(2003.50, $ymin, 90, 0, "IRU-1&2 on");
+	
+	
+	pgsci(5);
+	pgarro(2003.975, $ymin, 2003.975, $head);
+	pgsci(1);
+	pgptxt(2003.975, $ymin, 90, 0, "Stuck-on Heater");
+	
+	pgsci(5);
+	pgarro(2006.000, $ymin, 2006.000, $head);
+	pgsci(1);
+	pgptxt(2006.10, $ymin, 90, 0, "Relaxed EPHIN Const.");
+	
+	if($range =~/\q/i || $range =~ /w/i){
+	 	pglabel("Time (DOY/Year:$y_beg)", "$col_name", "");
+	}else{
+	 	pglabel("Time (Year)", "$col_name", "");
+	}
+	
+	pgclos();
+	system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name2");
+	
+	system("rm pgplot.ps");
+
+
+
+#
+#--- save fitting results etc in a file
+#--- OUT for human readable, OUT2 for machine friendly
+#
+
+	open(OUT, ">$out_data2");
+
+	if($range =~ /f/i){
+		open(OUT2, ">>$www_dir2/full_range_results_temp");
+	}elsif($range =~ /q/i){
+		open(OUT2, ">>$www_dir2/quarterly_results_temp");
+	}elsif($range =~ /w/i){
+		open(OUT2, ">>$www_dir2/weekly_results_temp");
+	}
+	
+	print OUT "Fitting Reuslts for $msid\n\n";
+	if($special_mark == 1){
+		print OUT2 "$hrc_mark.$col<>";
+	}else{
+		print OUT2 "$col<>";
+	}
+	
+	for($k = 0; $k < $num_break; $k++){
+		print OUT "\tIntercept @ $start_point\t";
+		print OUT "x\t\t";
+		for($n = 2; $n < $nterms; $n++){
+        		print OUT 'x**'."$n\t\t";
+		}
+		print OUT "\n";
+		print OUT "lower:\t";
+		$nv = 0;
+		$intercept = ${p_min.$nv.$k} + ${avgy_min.$k};
+	
+		print OUT  "$intercept\t";
+		$bp_short = sprintf "%5.4f", $break_point[$k];
+		print OUT2 "$bp_short=l=$intercept";
+	
+		for($n = 1; $n <= $nterms; $n++){
+        		print OUT  "${p_min.$n.$k}\t";
+			print OUT2 ":${p_min.$n.$k}";
+		}
+		print OUT "\n";
+		print OUT2 "=u=";
+	
+		print OUT "upper:\t";
+		$nv = 0;
+		$intercept = ${p_max.$nv.$k} + ${avgy_max.$k};
+		print OUT  "$intercept\t";
+		print OUT2 "$intercept";
+		for($n = 1; $n <= $nterms; $n++){
+        		print OUT  "${p_max.$n.$k}\t";
+			print OUT2 ":${p_max.$n.$k}";
+		}
+		print OUT "\n";
+		if($k < 8){
+			print OUT2 "<>";
+		}
+	}
+	
+	for($k = $num_break; $k < 8; $k++){
+		print OUT2 "=l=";
+		for($n = 0; $n < $nterms; $n++){
+			print OUT2 ":";
+		}
+		print OUT2 "=u=";
+		for($n = 0; $n < $nterms; $n++){
+			print OUT2 ":";
+		}
+		print OUT2 "<>";
+	}
+	
+	
+	if($range =~ /f/i){
+		if($bot_excess !~ /\d/){
+			$bot_excess = 'no violation';
+			print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
+			print OUT2 "<>";
+		}else{
+			if($bot_excess <= $today){
+				$temp = sprintf "%5.2f", $today;
+				print OUT "Lower limit violation estimated date: currently in  (Limit: $bot)\n";
+				print OUT2 "$temp<>";
+			}else{
+				print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
+				print OUT2 "$bot_excess<>";
+			}
+		}
+			
+		if($top_excess !~ /\d/){
+			$top_excess = 'no violation';
+			print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
+			print OUT2 "<>";
+		}else{
+			if($top_excess <= $today){
+				$temp = sprintf "%5.2f", $today;
+				print OUT "Upper limit violation estimated date: currently in (Limit: $top)\n";
+				print OUT2 "$temp<>";
+			}else{
+				print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
+				print OUT2 "$top_excess<>";
+			}
+		}
+	}else{
+		print OUT2 '<><>';
+	}
+	
+	print OUT2 "\n";
+	
+#
+#--- notify for the case, we dropped "0" from the data set
+#
+
+	if($neg_ratio <= 0.02 && $zero_ratio <= 0.99){ 
+		$zero_ratio *= 100;
+		$zero_ratio = sprintf "%2.2f", $zero_ratio;
+		print OUT "\n$zero_ratio % of data are '0' and they are dropped from data\n";
+	}
+	close(OUT);
+	close(OUT2);
+
+}			#-------- end of p009 data plot
 
 ###############################################################################
 ### find_cross_point: estimate limit violation point                        ###
