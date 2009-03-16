@@ -19,7 +19,7 @@ $bin_dir  = '/data/mta/MTA/bin/';
 $mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
 $save_dir = "$mta_dir/Save_data/";
 $www_dir1 = '/data/mta_www/mta_envelope_trend/';
-$www_dir2 = '/data/mta_www/mta_envelope_trend2/';
+$www_dir2 = '/data/mta_www/mta_envelope_trend/SnapShot/';
 
 #
 #---- read argument

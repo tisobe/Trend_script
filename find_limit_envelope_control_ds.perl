@@ -10,6 +10,8 @@
 #											#
 #########################################################################################
 
+
+
 #
 #---- directory
 #
@@ -25,6 +27,7 @@ $b_list = $ARGV[0];	#---- e.g. oba_list
 $limit  = $ARGV[1];	#---- yellow (y) or red (r) limit
 $range  = $ARGV[2];     #---- whether it is full (f), quarterly (q), or week (w)
 $both   = $ARGV[3];	#---- whether you want to create both mta and p009 plots
+$all    = $ARGV[4];	#---- if all, retrieve the entire data from dataseeker
 
 @atemp  = split(/_list/, $b_list);
 $ldir   = uc($atemp[0]);
@@ -163,7 +166,7 @@ for($i = 0; $i < $total; $i++){
 #
         $lchk   = `ls -d $saved_dir/*`;
 
-        if($lchk =~ /$fits/){
+        if($lchk =~ /$fits/ && $all !~ /all/i){
 #
 #--- if the past data file exits, find the last entry of the data
 #
