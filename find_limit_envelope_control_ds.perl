@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Mar 13, 2009						#
+#		last update: Mar 17, 2009						#
 #											#
 #########################################################################################
 
@@ -134,18 +134,9 @@ close(FH);
 #
 #--- find a path to the previous data location
 #
-@atemp  = split(/_list/, $b_list);
-$ms_dir = uc (@atemp[0]);
-
-if($range =~ /f/i){
-        $s_dir = 'Full_range';
-}elsif($range =~ /q/i){
-        $s_dir = 'Quarterly';
-}elsif($range =~ /w/i){
-        $s_dir = 'Weekly';
-}
-
-$saved_dir = "$www_dir"."$s_dir/"."$ms_dir/"."Fits_data/";
+@atemp     = split(/_list/, $b_list);
+$ms_dir    = uc (@atemp[0]);
+$saved_dir = "$www_dir"."Full_range/"."$ms_dir/"."Fits_data/";
 
 for($i = 0; $i < $total; $i++){
 	$msid_list[$i]= uc($msid_list[$i]);
@@ -162,77 +153,81 @@ for($i = 0; $i < $total; $i++){
 	$fits   = "$msid".'.fits';
 	$fitsgz = "$fits".'.gz';
 #
+#--- if this is weekly case (data updated daily) add the new potion to the
+#--- existing database also if it asks to retrieve all data again ($all == all), do so.
+#
+	if($range =~ /w/ || $all =~ /all/i){
+#
 #--- check whether the past data file exists
 #
-        $lchk   = `ls -d $saved_dir/*`;
+       		$lchk   = `ls -d $saved_dir/*`;
 
-        if($lchk =~ /$fits/ && $all !~ /all/i){
+       		if($lchk =~ /$fits/ && $all !~ /all/i){
 #
 #--- if the past data file exits, find the last entry of the data
 #
-		$line   = "$saved_dir/$fitsgz".'[cols time]';
-		system("dmstat \"$line\" > zstat");
-		open(IN, "./zstat");
-		OUTER:
-		while(<IN>){
-			chomp $_;
-			if($_ =~ /max/){
-				@atemp = split(/\s+/, $_);
-				$last_entry = $atemp[2];
-				last OUTER;
+			$line   = "$saved_dir/$fitsgz".'[cols time]';
+			system("dmstat \"$line\" > zstat");
+			open(IN, "./zstat");
+			OUTER:
+			while(<IN>){
+				chomp $_;
+				if($_ =~ /max/){
+					@atemp = split(/\s+/, $_);
+					$last_entry = $atemp[2];
+					last OUTER;
+				}
 			}
-		}
-		close(IN);
-	
-		$line = "columns=$col timestart=$last_entry timestop=$end";
+			close(IN);
 		
-		$fchk = `ls `;
-		if($fchk =~/temp.fits/){
-			system("rm temp.fits");
-		}
+			$line = "columns=$col timestart=$last_entry timestop=$end";
+			
+			$fchk = `ls `;
+			if($fchk =~/temp.fits/){
+				system("rm temp.fits");
+			}
 	
 #
 #--- extract data from the last entry point to today
 #
 
-		system("dataseeker.pl infile=test outfile=temp.fits search_crit=\"$line\" ");
+			system("dataseeker.pl infile=test outfile=temp.fits search_crit=\"$line\" ");
 
 #
 #--- add the extracted data to the past data
 #
-		system("dmmerge \"$saved_dir/$fitsgz temp.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
-
-#
-#--- trim off the part we do not need (for quaterly and weekly)
-#
-		if($range =~ /f/){
-			system("mv merged.fits trimed.fits");
-	 	}else{
-			$line = "merged.fits".'[time='."$start:$end".']';
-			system("dmcopy \"$line\" outfile=trimed.fits clobber=yes");
+			system("dmmerge \"$saved_dir/$fitsgz temp.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
+			system("gzip merged.fits");
+			system("mv merged.fits.gz $saved_dir/$fitsgz");
 		}
 	}else{
 #
-#--- if this is the first time the data is extracted....
+#--- if this is the first time the data is extracted, or asked to extract all again...
 #
 
-                $line = "columns=$col timestart=$start timestop=$end";
+                $line = "columns=$col timestart=63071999 timestop=$end";
 
                 $fchk = `ls `;
                 if($fchk =~/trimed.fits/){
                         system("rm trimed.fits");
                 }
-                system("dataseeker.pl infile=test outfile=trimed.fits search_crit=\"$line\" ");
-        }
+                system("dataseeker.pl infile=test outfile=merged.fits search_crit=\"$line\" ");
+		system("mv merged.fits $saved_dir/$fits");
+		system("gzip $saved_dir/$fits");
+	}
 
 #
 #---- now call the script actually plots the data
 #
 
-	system("perl $bin_dir/find_limit_envelope.perl trimed.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	if($range =~ /f/){
+		system("perl $bin_dir/find_limit_envelope.perl $saved_dir/$fitsgz $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	}else{
+		$line = "$saved_dir/$fitsgz".'[time='."$start:$end".']';
+		system("dmcopy \"$line\" outfile=trimed.fits clobber=yes");
+		system("perl $bin_dir/find_limit_envelope.perl trimed.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	}
 
-	system("mv trimed.fits      $out_dir/Fits_data/$fits");
-	system("gzip -f             $out_dir/Fits_data/$fits");
 #
 #---- if both mta and p009 plots are created, save them in different directories
 #
@@ -253,8 +248,6 @@ for($i = 0; $i < $total; $i++){
 	if($range != /f/){
 		system("rm zstat");
 	}else{
-		system("rm merged.fits zstat");
+		system("rm trimed.fits zstat");
 	}
-
-
 }

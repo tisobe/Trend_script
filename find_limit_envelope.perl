@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Mar 12, 2009							#
+#		last update Mar 16, 2009							#
 #												#
 #################################################################################################
 
@@ -584,6 +584,15 @@ if($neg_ratio == 0.0 && $ymin < 0){
 }
 
 $ydiff = $ymax - $ymin;
+
+#
+#--- if the plotting range is too small, fix it
+#
+if($ydiff < 0.01){
+	$ymin  = $test_avg - 0.01;
+	$ymax  = $test_avg + 0.01;
+	$ydiff = 0.02;
+}
 $ytxt  = $ymax - 0.1 * $ydiff;
 
 pgenv($xmin, $xmax, $ymin, $ymax, 0, 0);
