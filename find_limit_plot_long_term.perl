@@ -3,13 +3,14 @@ use PGPLOT;
 
 #################################################################################################
 #												#
-#	find_limit_envelope.perl: estimate limit envelope around given data			#
+#	find_limit_plot_long_term.perl: estimate limit envelope around given data for a long	#
+#					term data. use saved data.				#
 #												#
 #		data are in dataseeker format	(col names are in  <col>_avg)			#
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Apr 09, 2009							#
+#		last update Apr 13, 2009							#
 #												#
 #################################################################################################
 
@@ -20,6 +21,9 @@ use PGPLOT;
 $www_dir1 = '/data/mta/www/mta_envelope_trend/';
 $www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
 $save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
+
+#$www_dir1 = './';
+#$www_dir2 = './';
 
 #
 #--- setting:
@@ -50,13 +54,19 @@ $limit_table2 = "$save_dir/limit_table";
 #--- read data file name  etc
 #
 
-$fits   = $ARGV[0];		#--- input fits file, dataseeker format
+$fits   = $ARGV[0];		#--- input fits file, long term data saved format
 $col    = $ARGV[1];		#--- data column name e.g. oobthr44_avg
 $nterms = $ARGV[2];		#--- degree of polynomial fit, 2 or 3 (linear and quad)
 $lim_c  = $ARGV[3];		#--- operational limit: yellow (y) or red (r) 
 $range  = $ARGV[4];		#--- whether this is full, quarterly, or weekly
 $lim_s  = $ARGV[5];		#--- limit selection: mta, op, or both
 
+#
+#--- set name of min/max envelope data file name
+#
+
+$lfits  = $fits;
+$lfits  =~ s/_data\.fits/_min_max\.fits/;
 
 #
 #--- set which limit table to use
@@ -134,25 +144,15 @@ $today    = $today + $uyday/$y_length;
 #---- set data ranges, and a box size.
 #
 
-if($range =~ /f/i){
-	$end_time = $uyear + 1900 + 1;
-	$box_length   = 0.019178082;    	#--- binning size: one week in year
-}elsif($range =~ /q/i){
-	$end_time   = $today;
-	$datastart  = $today - 0.25;
-	$box_length = 5.479452054e-3;		#---- 2 days box size
-}elsif($range =~ /w/i){
-	$end_time   = $today    - 0.019178082;	#---- the data range is between two weeks ago and one week ago
-	$datastart  = $end_time - 0.019178082;
-#	$box_length = 2.283105022e-4;		#---- 2 hrs box size
-	$box_length = 5.707762557e-5;		#---- 30 min box size
-}
+$end_time = $uyear + 1900 + 1;
+$box_length   = 0.019178082;    	#--- binning size: one week in year
 
 #
 #--- read break points in year
 #
 
 @break_point = ($datastart);
+
 $m           = 6;
 $num_break   = 0;
 OUTER:
@@ -165,9 +165,9 @@ while($ARGV[$m] =~ /\d/ && $ARGV[$m] ne ''){
 		last OUTER;
 	}
 }
-$num_break++;
 
 push(@break_point, $end_time);
+$num_break++;
 
 #
 #--- check file name, modify it, and create output file names
@@ -263,213 +263,38 @@ if($lim_c =~ /y/){
 #--- extract data needed
 #
 
-$line = "$fits".'[cols time,'."$col".']';
+$line = "$fits".'[cols col1,col2]';
 
 $in_line = `dmlist \"$line\" opt=data`;
 @in_data = split(/\n/, $in_line);
 
 
 #
-#--- read data; convert the time to fraction of year
+#--- read data
 #
-
-@time_tmp  = ();
-@data_tmp  = ();
-$total_tmp = 0;
 
 @time      = ();
 @data      = ();
-$total     = 0;			#---- total # of data
-$plus      = 0;			#---- # of data above zero
-$zero      = 0;			#---- # of data equal to zero
-$minus     = 0;			#---- # of data below zero
-$hchk      = 0;			#---- indicator to tell whether data is from dataseeker
+$total     = 0;	
 
 OUTER:
 foreach $ent (@in_data){
 	@atemp = split(/\s+/, $ent);
-	if($atemp[1] =~/\d/){
-		if($atemp[0] =~ /\d/){
-#
-#--- for the case, the data are already binned into one hour
-#
-			if($atemp[1] == 0){
-				next OUTER;
-			}elsif($atemp[1] < 31536000){
-				$hchk = 1;
-				if($atemp[2] != -99.0 && $atemp[2] !~ /NaN/i){
-					$dom = $atemp[1];
-					dom_to_ydate();
-					if($ydate >= $datastart){
-						push(@time, $ydate);
-						push(@data, $atemp[2]);
-						$total++;
-					}
-				}
-			}else{
-#
-#--- for the case the data are from dataseeker and 5 min interval
-#
-				$hchk = 0;
-				if($atemp[2] != -99.0 && $atemp[2] !~ /NaN/i){
-					push(@time_tmp, $atemp[1]);
-					push(@data_tmp, $atemp[2]);
-					$total_tmp++;
-					if($atemp[2] > 0){
-						$plus++;
-					}elsif($atemp[2] < 0){
-						$minus++;
-					}else{
-						$zero++;
-					}
-				}
-			}
-		}else{
-			if($atemp[2] == 0){
-				next OUTER;
-			}elsif($atemp[2] < 31536000){
-				$hchk = 1;
-				if($atemp[3] != -99.0 && $atemp[3] !~ /NaN/i){
-					$dom = $atemp[2];
-					dom_to_ydate();
-					if($ydate >= $datastart){
-						push(@time, $ydate);
-						push(@data, $atemp[3]);
-						$total++;
-					}
-				}
-			}else{
-				$hchk = 0;
-				if($atemp[3] != -99.0 && $atemp[3] !~ /NaN/i){
-					push(@time_tmp, $atemp[2]);
-					push(@data_tmp, $atemp[3]);
-					$total_tmp++;
-					if($atemp[3] > 0){
-						$plus++;
-					}elsif($atemp[3] < 0){
-						$minus++;
-					}else{
-						$zero++;
-					}
-				}
-			}
-		}
+	if($ent =~ /col/){
+		next OUTER;
 	}
-}
-
-#
-#--- if the data is from dataseeker (5 min interval), we need further data manupulation
-#
-
-if($hchk ==  0){
-	if($hour_binning  == 0){
-#
-#--- for the case,  we decided to keep the original time interval
-#
-		@time  = ();
-		@data  = ();
-		$total = 0;
-		for($m = 0; $m < $total_tmp; $m++){
-			$year_date = sec1998_to_fracyear($time_tmp[$m]);
-			if($year_date >= $data_start){
-				push(@time, $year_date);
-				push(@data, $data_tmp[$m]);
+	if($atemp[1] =~/\d/){
+		if($atemp[1] =~ /\d/){
+			if($atemp[0] =~ /\d/){
+				push(@time, $atemp[1]);
+				push(@data, $atemp[2]);
+				$total++;
+			}else{
+				push(@time, $atemp[2]);
+				push(@data, $atemp[3]);
 				$total++;
 			}
-		}
-	}else{
-#
-#--- for the case, we use one hour time interval
-#
-		$pos_ratio  = $plus/$total_tmp;
-		$neg_ratio  = $minus/$total_tmp;
-		$zero_ratio = $zero/$total_tmp;
-		$t_int      = 3600;
-		$t_int_mid  = 1800;
-
-		if($range =~ /f/i){
-#
-#--- if it is full range, take one day interval
-#
-			$t_int      = 86400;
-			$t_int_mid  = 43200;
-		}
-		
-#
-#--- if the data have both positive and negative values, or more than 98% of
-#--- the data is zero, keep all the data point, when binning.
-#
-		if($neg_ratio > 0.02 || $zero_ratio > 0.99){
-			$begin = $time_tmp[0];
-			$end   = $begin + $t_int;
-			$sum   = $data_tmp[0];
-			$sum_c = 1;
-			for($i = 1; $i < $total_tmp; $i++){
-				if($time_tmp[$i] < $end){
-					$sum += $data_tmp[$i];
-					$sum_c++;
-				}elsif($time_tmp[$i] >= $end){
-					if($sum_c > 0){
-						$avg = $sum/$sum_c;
-						$sec       = $begin + $t_int_mid;
-						$year_date = sec1998_to_fracyear($sec);
-						if($year_date >= $datastart){
-							push(@time, $year_date);
-							push(@data, $avg);
-							$total++;
-						}
-					}
-
-					$begin = $end;
-					$end   = $begin + 3600;
-					$sum   = $data_tmp[$i];
-					$sum_c = 1;
-				}
-			}
-		}else{
-#
-#--- for the case, there are enough positive values (at least more than 3% of data are positive),
-#--- drop "0", values before making hourly average.
-#
-			$begin = $time_tmp[0];
-			$end   = $begin + 3600;
-			$sum   = $data_tmp[0];
-			if($sum > 0){
-				$sum_c = 1;
-			}else{
-				$sum_c = 0;
-			}
-			for($i = 1; $i < $total_tmp; $i++){
-				if($time_tmp[$i] < $end){
-					if($data_tmp[$i] > 0){
-						$sum += $data_tmp[$i];
-						$sum_c++;
-					}
-				}elsif($time_tmp[$i] >= $end){
-					if($sum_c > 0){
-						$avg = $sum/$sum_c;
-						$sec       = $begin + 1800;
-						$year_date = sec1998_to_fracyear($sec);
-						if($year_date >= $datastart){
-							push(@time, $year_date);
-							push(@data, $avg);
-							$total++;
-						}
-					}
-
-					while($end < $time_tmp[$i]){
-						$begin = $end;
-						$end   = $begin + 3600;
-					}
-					$sum   = $data_tmp[$i];
-					if($sum > 0){
-						$sum_c = 1;
-					}else{
-						$sum_c = 0;
-					}
-				}
-			}
-		}
+		}	
 	}
 }
 
@@ -488,20 +313,62 @@ if($total == 0){
 }
 
 #
-#--- find box interval  min and max values for the data
-#--- if $fstart1 > $datastart, there will be two data sets (and possibly more)
+#--- read min and max envelope data
+#--- col1: time, col2: min, col3: max, col4: period
 #
 
-boxed_interval_min_max();
+$line = "$lfits".'[cols col1,col2,col3,col4]';
 
-if($chk > 0){
-	open(OUT, ">$out_data");
-	print OUT "Fitting Reuslts for $msid\n\n";
-	print OUT "Fitting Failed\n";
-	close(OUT);
+$in_line = `dmlist \"$line\" opt=data`;
+@in_data = split(/\n/, $in_line);
 
-	system("cp $save_dir/null_data_s.gif $out_name");
-	exit 1;
+@ltime  = ();
+@min    = ();
+@max    = ();
+$ltotal = 0;	
+$rg_min = 1e14;
+$rg_max = -1e14;
+
+OUTER:
+foreach $ent (@in_data){
+	@atemp = split(/\s+/, $ent);
+	if($ent =~ /col/){
+		next OUTER;
+	}
+	if($atemp[1] =~/\d/){
+		if($atemp[1] =~ /\d/){
+			if($atemp[0] =~ /\d/){
+#
+#--- save only the last period of data
+#
+				if($atemp[4] > $num_break -2){
+					push(@ltime, $atemp[1]);
+					push(@min,   $atemp[2]);
+					push(@max,   $atemp[3]);
+					$ltotal++;
+				}
+				if($atemp[2] < $rg_min){
+					$rg_min = $atemp[2];
+				}
+				if($atemp[3] > $rg_max){
+					$rg_max = $atemp[3];
+				}
+			}else{
+				if($atemp[5] > $num_break -2){
+					push(@ltime, $atemp[2]);
+					push(@min,   $atemp[3]);
+					push(@max,   $atemp[4]);
+					$ltotal++;
+				}
+				if($atemp[3] < $rg_min){
+					$rg_min = $atemp[3];
+				}
+				if($atemp[4] > $rg_max){
+					$rg_max = $atemp[4];
+				}
+			}
+		}	
+	}
 }
 
 #
@@ -517,69 +384,25 @@ pgslw(5);
 #--- establish  x axis range 
 #
 
-if($range =~ /f/i){
-	$xmin     = 1999;
-	$xmax     = $end_time;
-	$xdiff    = $xmax - $xmin;
-	$xmin    -= 0.05 * $ xdiff;
-	$xmax    += 0.05 * $ xdiff;
-	$xdiff    = $xmax - $xmin;
-	$xmid     = $xmin + 0.5 * $xdiff;
-	$xtxt     = $xmin + 0.1 * $xdiff;
-}elsif($range =~ /q/i || $range =~ /\w/){
-	$y_beg    = int($datastart);
-	$ychk     = 4.0 * int (0.25 * $y_beg);
-	if($ychk == $y_beg){
-		$multi = 366;
-	}else{
-		$multi = 365;
-	}
-	$f_beg    = $datastart - $y_beg;
-	$f_beg   *= $multi;
-	$y_end    = int($end_time);
-	$f_end    = $end_time - $y_end;
-	if($y_end > $y_beg){
-		$ychk     = 4.0 * int (0.25 * $y_end);
-		if($ychk == $y_end){
-			$multi2 = 366;
-		}else{
-			$multi2 = 365;
-		}
-		$f_end  *= $multi2;
-		$f_end  += $multi;
-	}else{
-		$f_end  *= $multi;
-	}
-	$diff     = $f_end - $f_beg;
-	$xmin     = $f_beg - 0.1 * $diff;
-	$xmax     = $f_end + 0.1 * $diff;
-	
-	$xdiff    = $xmax - $xmin;
-	$xmin    -= 0.05 * $ xdiff;
-	$xmax    += 0.05 * $ xdiff;
-	$xdiff    = $xmax - $xmin;
-	$xmid     = $xmin + 0.5 * $xdiff;
-	$xtxt     = $xmin + 0.1 * $xdiff;
-}
+$xmin     = 1999;
+$xmax     = $end_time;
+$xdiff    = $xmax - $xmin;
+$xmin    -= 0.05 * $ xdiff;
+$xmax    += 0.05 * $ xdiff;
+$xdiff    = $xmax - $xmin;
+$xmid     = $xmin + 0.5 * $xdiff;
+$xtxt     = $xmin + 0.1 * $xdiff;
+
 
 #
-#--- setting y plotting range: $test_sig is from sub: boxed_interval_min_max()
+#--- setting y plotting range
 #
 
-$ymin  = $test_avg - 4.0 * $test_sig;
-$ymax  = $test_avg + 4.0 * $test_sig;
-
-if($neg_ratio == 0.0 && $ymin < 0){
-	if($zero_ratio > 0.2){
-		$aval = abs($ymin);
-		if($aval > 0.1 * $ymax){
-			$ymin = -0.1 * $aval;
-		}
-	}
-}elsif($ymin == 0){
-	$ymin = -0.1 * $ymax;
-}
-
+$ymin  = $rg_min;
+$ymax  = $rg_max;
+$ydiff = $ymax - $ymin;
+$ymin -= 0.10 * $ydiff;
+$ymax += 0.10 * $ydiff;
 $ydiff = $ymax - $ymin;
 
 #
@@ -590,6 +413,7 @@ if($ydiff < 0.01){
 	$ymax  = $test_avg + 0.01;
 	$ydiff = 0.02;
 }
+
 $ytxt  = $ymax - 0.1 * $ydiff;
 
 pgenv($xmin, $xmax, $ymin, $ymax, 0, 0);
@@ -598,57 +422,110 @@ pgenv($xmin, $xmax, $ymin, $ymax, 0, 0);
 #--- plot data points
 #
 
-if($range =~ /f/i){
-	for($i = 0; $i < $total; $i++){
-		if($data[$i] >= $y_low && $data[$i] <= $y_top){
-			pgsci(1);
-		}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
-			pgsci(2);
-		}else{
-			pgsci(6);
-		}
-		pgpt(1,$time[$i], $data[$i], 1);
+for($i = 0; $i < $total; $i++){
+	if($data[$i] >= $y_low && $data[$i] <= $y_top){
 		pgsci(1);
+	}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
+		pgsci(2);
+	}else{
+		pgsci(6);
 	}
-}else{
-	pgsch(2);
-	pgslw(10);
-	OUTER:
-	for($i = 0; $i < $total; $i++){
-		if($time[$i] < $datastart){
-			next OUTER;
-		}elsif($time[$i] > $end_time){
-			last OUTER;
-		}
-
-		$y_part = int($time[$i]);
-		$d_part = $time[$i] - $y_part;
-		if($y_part > $y_beg){
-			$d_part *= $multi2;
-			$d_part += $multi;
-		}else{
-			$d_part *= $multi;
-		}
-		if($data[$i] >= $y_low && $data[$i] <= $y_top){
-			pgsci(1);
-		}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
-			pgsci(2);
-		}else{
-			pgsci(6);
-		}
-		pgpt(1,$d_part, $data[$i], 1);
-		pgsci(1);
-	}
-	pgsch(1);
-	pgslw(5);
+	pgpt(1,$time[$i], $data[$i], 1);
+	pgsci(1);
 }
 
 
 #
-#--- estimate envelopes
+#---- read previously fitted envelope data
 #
 
-for($k = 0; $k < $num_break; $k++){
+$tcol = $col;
+if($tcol !~ /_avg/i){
+	$tcol = "$col"."_avg";
+}
+$ucol = uc($tcol);
+$e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $ucol`;
+if($e_results !~ /$ucol/i){
+	$lcol = lc($tcol);
+	$e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $lcol`;
+}
+
+@break_year = ();
+@low_a0     = ();
+@low_a1     = ();
+@low_a2     = ();
+@top_a3     = ();
+@top_a0     = ();
+@top_a1     = ();
+@top_a2     = ();
+@top_a3     = ();
+$sep_cnt    = 0;
+@atemp = split(/<>/, $e_results);
+OUTER:
+for($i = 1; $i < $num_break; $i++){
+	@btemp = split(/=l=/, $atemp[$i]);
+	if($btemp[0] eq ''){
+		last OUTER;
+	}
+	push(@break_year, $btemp[0]);
+	@ctemp = split(/=u=/, $btemp[1]);
+	@dtemp = split(/:/,   $ctemp[0]);
+	push(@{low_a.0}, $dtemp[0]);
+	push(@{low_a.1}, $dtemp[1]);
+	push(@{low_a.2}, $dtemp[2]);
+	push(@{low_a.3}, $dtemp[3]);
+	@dtemp = split(/:/,   $ctemp[1]);
+	push(@{top_a.0}, $dtemp[0]);
+	push(@{top_a.1}, $dtemp[1]);
+	push(@{top_a.2}, $dtemp[2]);
+	push(@{top_a.3}, $dtemp[3]);
+	$sep_cnt++;
+}
+
+#
+#--- plot envelope except the last break period
+#
+
+for($k = 0; $k < $sep_cnt; $k++){
+	pgsci(4);
+	$x_range = $break_point[$k+1] - $break_point[$k];
+	$step = $x_range/100;
+	pgmove($break_point[$k], ${low_a.0}[$k]);
+	for($j = 1; $j < 100; $j++){
+		$x_adj = $step * $j;
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${low_a.$n}[$k] * power($x_adj, $n);
+		}
+		$x_est = $x_adj + $break_point[$k];
+		pgdraw($x_est, $y_est);
+	}
+
+
+	pgmove($break_point[$k], ${top_a.0}[$k]);
+	for($j = 1; $j < 100; $j++){
+		$x_adj = $step * $j;
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${top_a.$n}[$k] * power($x_adj, $n);
+		}
+		$x_est = $x_adj + $break_point[$k];
+		pgdraw($x_est, $y_est);
+	}
+
+#
+#--- save in a different format for future use
+#
+	for($n = 0; $n <= $nterms; $n++){
+		${p_min.$n.$k} = ${low_a.$n}[$k];
+		${p_max.$n.$k} = ${top_a.$n}[$k];
+	}
+}
+
+	
+#
+#--- estimate envelopes of the last period
+#
 
 #
 #--- svdfit is a polynomial fit routine; it works well if the data means (both x and y)
@@ -656,80 +533,34 @@ for($k = 0; $k < $num_break; $k++){
 #--- and move the y mean to 0.
 #
 
-	if(${box_cnt.$k} > 0){
-		@adj_x  = ();
-		if($range =~ /\q/i || $range =~ /w/i){		#--- this is for "q" and "w" case
-			$b_year = int ($break_point[$k]);
-			$f_year = $break_point[$k] - $b_year;
-			$lchk   = 4.0 * int(0.25 * $b_year);
-			if($b_year == $lchk){
-				$y_add = 366;
-			}else{
-				$y_add = 365;
-			}
-			$f_year *= $y_add;
-			$break_point[$k] = $f_year;
-#
-#--- if the data range is for a quoterly or weekly, the date of the data should, at most, span
-#--- 2 year or less. So here we can rewirite break_point[$k+1] into doy without any futher problems.
-# 
-			$b_year2 = int ($break_point[$k+1]);
-			$f_year2 = $break_point[$k+1] - $b_year;
-			if($b_year2 > $b_year){
-				$lchk    = 4.0 * int(0.25 * $b_year);
-				if($b_year == $lchk){
-					$y_add2 = 366;
-				}else{
-					$y_add2 = 365;
-				}
-				$f_year2 *= $y_add2;
-				$f_year2 += $y_add;
-			}else{
-				$f_year2 *= $y_add;
-			}
-			$break_point[$k+1] = $f_year2;
-		}
-		for($j = 0; $j < ${box_cnt.$k}; $j++){
-			if($range =~ /\q/i || $range =~ /w/i){
-				$y_part = int (${box_time_s.$k}[$j]);
-				$f_part = ${box_time_s.$k}[$j] - $y_part;
-				$lchk     = 4.0 * int(0.25 * $y_part);
-				if($y_part == $lchk){
-					$y_length = 366;
-				}else{
-					$y_length = 365;
-				}
-				$f_part *= $y_length;
-				if($y_part > $b_year){
-					$f_part += $y_add;
-				}
-				$xtemp = $f_part - $f_year;
-		
-			}else{
-        			$xtemp = ${box_time_s.$k}[$j] - $break_point[$k];
-			}
-        		push(@adj_x, $xtemp);
-		}
+$last = $num_break -1;
 
-		$sumy_min = 0;
-		$sumy_max = 0;
-		for($j = 0; $j < ${box_cnt.$k}; $j++){
-			$sumy_min += ${box_min.$k}[$j];
-			$sumy_max += ${box_max.$k}[$j];
-		}
-		$avgy_min     = $sumy_min/${box_cnt.$k};
-		$avgy_max     = $sumy_max/${box_cnt.$k};
-		${avg_min.$k} = $avgy_min;
-		${avg_max.$k} = $avgy_max;
+if($ltotal > 0){
+	@adj_x  = ();
+	for($j = 0; $j < $ltotal; $j++){
+       		$xtemp = $ltime[$j] - $break_point[$last];
+       		push(@adj_x, $xtemp);
+	}
 
-		@adj_y_min = ();
-		@adj_y_max = ();
-		for($j = 0; $j < ${box_cnt.$k}; $j++){
-			$y_temp = ${box_min.$k}[$j] - $avgy_min;
-			push(@adj_y_min, $y_temp);
-			$y_temp = ${box_max.$k}[$j] - $avgy_max;
-			push(@adj_y_max, $y_temp);
-		}
+	$sumy_min = 0;
+	$sumy_max = 0;
+	for($j = 0; $j < $ltotal; $j++){
+		$sumy_min += $min[$j];
+		$sumy_max += $max[$j];
+	}
+	$avgy_min        = $sumy_min/$ltotal;
+	$avgy_max        = $sumy_max/$ltotal;
+	${avg_min.$last} = $avgy_max;
+	${avg_max.$last} = $avgy_max;
+
+	@adj_y_min = ();
+	@adj_y_max = ();
+	for($j = 0; $j <$ltotal ; $j++){
+		$y_temp = $min[$j] - $avgy_min;
+		push(@adj_y_min, $y_temp);
+		$y_temp = $max[$j] - $avgy_max;
+		push(@adj_y_max, $y_temp);
+	}
 
 #
 #--- envelope computation; first round
@@ -739,95 +570,65 @@ for($k = 0; $k < $num_break; $k++){
 #--- lower envelope
 #
 		
-#		if($nterms > 2){
-			@x_in   = @adj_x;
-			@y_in   = @adj_y_min;
-			$npts   = ${box_cnt.$k};
-			$mode   = 0;
-		
-			svdfit($npts, $nterms);
-		
-			for($n = 0; $n <= $nterms; $n++){
-				${p_min.$n}    = $a[$n];
-				${p_min.$n.$k} = $a[$n];
-			}
-#		}else{
-#			@xdata    = @adj_x;
-#			@ydata    = @adj_y_min;
-#			$data_cnt = ${box_cnt.$k};
-#
-#			robust_fit();
-#
-#			$n = 0;
-#			${p_min.$n}    = $int;
-#			${p_min.$n.$k} = $int;
-#			$n = 1;
-#			${p_min.$n}    = $slope;
-#			${p_min.$n.$k} = $slope;
-#		}
-			
+	@x_in   = @adj_x;
+	@y_in   = @adj_y_min;
+	$npts   = $ltotal;
+	$mode   = 0;
+
+	svdfit($npts, $nterms);
+
+	for($n = 0; $n <= $nterms; $n++){
+		${p_min.$n}       = $a[$n];
+		${p_min.$n.$last} = $a[$n];
+	}
 
 #
 #---- upper envelope
 #
 
-#		if($nterms > 2){
-			@y_in   = @adj_y_max;
-	
-			svdfit($npts, $nterms);
-		
-			for($n = 0; $n <= $nterms; $n++){
-				${p_max.$n}    = $a[$n];
-				${p_max.$n.$k} = $a[$n];
-			}
-#		}else{
-#			@ydata    = @adj_y_max;
-#			$data_cnt = ${box_cnt.$k};
-#
-#			robust_fit();
-#
-#			$n = 0;
-#			${p_max.$n}    = $int;
-#			${p_max.$n.$k} = $int;
-#			$n = 1;
-#			${p_max.$n}    = $slope;
-#			${p_max.$n.$k} = $slope;
-#		}
+	@y_in   = @adj_y_max;
+
+	svdfit($npts, $nterms);
+
+	for($n = 0; $n <= $nterms; $n++){
+		${p_max.$n}       = $a[$n];
+		${p_max.$n.$last} = $a[$n];
+	}
 
 #
 #---- compute standard deviation from the the fitting line
 #
 
-		$sum_min  = 0;
-		$sum_min2 = 0;
-		$sum_max  = 0;
-		$sum_max2 = 0;
-		for($j = 0; $j < ${box_cnt.$k}; $j++){
-			
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_min.$n} * power($adj_x[$j], $n);
-			}
-			$diff = $adj_y_min[$j]  - $y_est;
-
-			$sum_min  += $diff;
-			$sum_min2 += $diff * $diff;
-			
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_max.$n} * power($adj_x[$j], $n);
-			}
-			$diff = $adj_y_max[$j]  - $y_est;
-	
-			$sum_max  += $diff;
-			$sum_max2 += $diff * $diff;
+	$sum_min  = 0;
+	$sum_min2 = 0;
+	$sum_max  = 0;
+	$sum_max2 = 0;
+	for($j = 0; $j < $ltotal ; $j++){
+		
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_min.$n} * power($adj_x[$j], $n);
 		}
+		$diff = $adj_y_min[$j]  - $y_est;
 
-		$pmin_avg = $sum_min/${box_cnt.$k};
-		$pmin_sig = sqrt($sum_min2/${box_cnt.$k} - $pmin_avg * $pmin_avg);
-	
-		$pmax_avg = $sum_max/${box_cnt.$k};
-		$pmax_sig = sqrt($sum_max2/${box_cnt.$k} - $pmax_avg * $pmax_avg);
+		$sum_min  += $diff;
+		$sum_min2 += $diff * $diff;
+		
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+		}
+		$diff = $adj_y_max[$j]  - $y_est;
+
+		$sum_max  += $diff;
+		$sum_max2 += $diff * $diff;
+	}
+
+	$pmin_avg = $sum_min/$ltotal;
+	$pmin_sig = sqrt($sum_min2/$ltotal - $pmin_avg * $pmin_avg);
+
+	$pmax_avg = $sum_max/$ltotal;
+	$pmax_sig = sqrt($sum_max2/$ltotal - $pmax_avg * $pmax_avg);
 
 #
 #---- envelope computation, second round.
@@ -838,276 +639,249 @@ for($k = 0; $k < $num_break; $k++){
 #
 #---- lower envelope
 #
-		@x_in = ();
-		@y_in = ();
-		$npts = 0;
-		for($j = 0; $j < ${box_cnt.$k}; $j++){
+	@x_in = ();
+	@y_in = ();
+	$npts = 0;
+	for($j = 0; $j < $ltotal; $j++){
 
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_min.$n} * power($adj_x[$j], $n);
-			}
-			$plim  = $y_est  - $out_range * $pmin_sig;
-
-			if($adj_y_min[$j] <  $plim){
-				push(@x_in, $adj_x[$j]);
-				push(@y_in, $adj_y_min[$j]);
-				$npts++;
-			}
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_min.$n} * power($adj_x[$j], $n);
 		}
+		$plim  = $y_est  - $out_range * $pmin_sig;
+
+		if($adj_y_min[$j] <  $plim){
+			push(@x_in, $adj_x[$j]);
+			push(@y_in, $adj_y_min[$j]);
+			$npts++;
+		}
+	}
 
 #
 #---- if the numbers of selected data points are too small, use the original estimates
 #
-		if($npts > 10){
-#			if($nterms > 2){
-				svdfit($npts, $nterms);
+	if($npts > 10){
+		svdfit($npts, $nterms);
 
-				for($n = 0; $n <= $nterms; $n++){
-					${p_min.$n}    = $a[$n];
-					${p_min.$n.$k} = $a[$n];
-				}
-#			}else{
-#				@xdata = @x_in;
-#				@ydata = @y_in;
-#				$data_cnt = $npts;
-#
-#				robust_fit();
-#
-#				$n = 0;
-#				${p_min.$n}    = $int;
-#				${p_min.$n.$k} = $int;
-#				$n = 1;
-#				${p_min.$n}    = $slope;
-#				${p_min.$n.$k} = $slope;
-#			}
+		for($n = 0; $n <= $nterms; $n++){
+			${p_min.$n}       = $a[$n];
+			${p_min.$n.$last} = $a[$n];
 		}
+	}
 #
 #---- upper envelope
 #
-		@x_in = ();
-		@y_in = ();
-		$npts = 0;
-		for($j = 0; $j < ${box_cnt.$k}; $j++){
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_max.$n} * power($adj_x[$j], $n);
-			}
-			$plim  = $y_est  + $out_range * $pmax_sig;
-
-			if($adj_y_max[$j] >  $plim){
-				push(@x_in, $adj_x[$j]);
-				push(@y_in, $adj_y_max[$j]);
-				$npts++;
-			}
+	@x_in = ();
+	@y_in = ();
+	$npts = 0;
+	for($j = 0; $j < $ltotal; $j++){
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_max.$n} * power($adj_x[$j], $n);
 		}
+		$plim  = $y_est  + $out_range * $pmax_sig;
 
-		if($npts > 10){
-#			if($nterms > 2){
-				svdfit($npts, $nterms);
-	
-				for($n = 0; $n <= $nterms; $n++){
-					${p_max.$n}    = $a[$n];
-					${p_max.$n.$k} = $a[$n];
-				}
-#			}else{
-#				@xdata = @x_in;
-#				@ydata = @y_in;
-#				$data_cnt = $npts;
-#
-#				robust_fit();
-#
-#				$n = 0;
-#				${p_min.$n}    = $int;
-#				${p_min.$n.$k} = $int;
-#				$n = 1;
-#				${p_min.$n}    = $slope;
-#				${p_min.$n.$k} = $slope;
-#			}
+		if($adj_y_max[$j] >  $plim){
+			push(@x_in, $adj_x[$j]);
+			push(@y_in, $adj_y_max[$j]);
+			$npts++;
 		}
+	}
+
+	if($npts > 10){
+		svdfit($npts, $nterms);
+
+		for($n = 0; $n <= $nterms; $n++){
+			${p_max.$n}    = $a[$n];
+			${p_max.$n.$last} = $a[$n];
+		}
+	}
 
 #
 #---- compute standard deviation from the the fitting line (again)
 #
 
-		$sum_min  = 0;
-		$sum_min2 = 0;
-		$sum_max  = 0;
-		$sum_max2 = 0;
-		for($j = 0; $j < ${box_cnt.$k}; $j++){
-			
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_min.$n} * power($adj_x[$j], $n);
-			}
-			$diff = $adj_y_min[$j] - $y_est;
-
-			$sum_min  += $diff;
-			$sum_min2 += $diff * $diff;
-
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_max.$n} * power($adj_x[$j], $n);
-			}
-			$diff = $adj_y_max[$j] - $y_est;
-
-			$sum_max  += $diff;
-			$sum_max2 += $diff * $diff;
+	$sum_min  = 0;
+	$sum_min2 = 0;
+	$sum_max  = 0;
+	$sum_max2 = 0;
+	for($j = 0; $j < $ltotal; $j++){
+		
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_min.$n} * power($adj_x[$j], $n);
 		}
-		$pmin_avg = $sum_min/${box_cnt.$k};
-		$pmin_sig = sqrt($sum_min2/${box_cnt.$k} - $pmin_avg * $pmin_avg);
-	
-		$pmax_avg = $sum_max/${box_cnt.$k};
-		$pmax_sig = sqrt($sum_max2/${box_cnt.$k} - $pmax_avg * $pmax_avg);
+		$diff = $adj_y_min[$j] - $y_est;
+
+		$sum_min  += $diff;
+		$sum_min2 += $diff * $diff;
+
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+		}
+		$diff = $adj_y_max[$j] - $y_est;
+
+		$sum_max  += $diff;
+		$sum_max2 += $diff * $diff;
+	}
+	$pmin_avg = $sum_min/$ltotal;
+	$pmin_sig = sqrt($sum_min2/$ltotal - $pmin_avg * $pmin_avg);
+
+	$pmax_avg = $sum_max/$ltotal;
+	$pmax_sig = sqrt($sum_max2/$ltotal - $pmax_avg * $pmax_avg);
 
 #
 #--- plot the lower envelope
 #
 
-		pgsci(4);
-		$x_range = $break_point[$k+1] - $break_point[$k];
-		$step = $x_range/100;
+	pgsci(4);
+	$x_range = $break_point[$last+1] - $break_point[$last];
+	$step = $x_range/100;
 
-		$y_est = ${p_min.0}  - $widen * $pmin_sig + $avgy_min;
-		pgmove($break_point[$k], $y_est);
-		for($j = 1; $j < 100; $j++){
-			$x_adj = $step * $j;
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_min.$n} * power($x_adj, $n);
-			}
-			$y_est = $y_est - $widen * $pmin_sig + $avgy_min;
-			$x_est = $x_adj + $break_point[$k];
-
-			pgdraw($x_est, $y_est);
+	$m = 0;
+	${p_min.$m}       += $avgy_min;
+	${p_min.$m.$last} += $avgy_min;
+	$y_est             = ${p_min.0}  - $widen * $pmin_sig;
+	pgmove($break_point[$last], $y_est);
+	for($j = 1; $j < 100; $j++){
+		$x_adj = $step * $j;
+		$y_est = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_min.$n} * power($x_adj, $n);
 		}
+		$y_est = $y_est - $widen * $pmin_sig;
+		$x_est = $x_adj + $break_point[$last];
+
+		pgdraw($x_est, $y_est);
+	}
 
 #
 #--- plot the upper envelope
 #
 
-		$y_est = ${p_max.0}  + $widen * $pmax_sig + $avgy_max;
-		pgmove($break_point[$k], $y_est);
-		for($j = 1; $j < 100; $j++){
-			$x_adj = $step * $j;
-			$y_est  = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_max.$n} * power($x_adj, $n);
-			}
-			$y_est = $y_est + $widen * $pmax_sig + $avgy_max;
-			$x_est = $x_adj + $break_point[$k];
-
-			pgdraw($x_est, $y_est);
+	${p_max.$m}       += $avgy_max;
+	${p_max.$m.$last} += $avgy_max;
+	$y_est             = ${p_max.0}  + $widen * $pmax_sig;
+	pgmove($break_point[$last], $y_est);
+	for($j = 1; $j < 100; $j++){
+		$x_adj = $step * $j;
+		$y_est  = 0;
+		for($n = 0; $n <= $nterms; $n++){
+			$y_est += ${p_max.$n} * power($x_adj, $n);
 		}
-		pgsci(1);
+		$y_est = $y_est + $widen * $pmax_sig;
+		$x_est = $x_adj + $break_point[$last];
+
+		pgdraw($x_est, $y_est);
 	}
+	pgsci(1);
 }
 
 pgsci(1);
+
 
 #
 #--- check whether the lower limt will be violated in near future
 #
 
-if($range =~ /f/i){
-	$last       = $num_break -1;
-	$bot_excess = '';
-	$x_adj      = $xmax + 10 - $break_point[$last];
-	
-	$y_est = 0;
-	for($n = 0; $n <= $nterms; $n++){
-		$y_est += ${p_min.$n.$last} * power($x_adj, $n);
+
+$bot_excess = '';
+$x_adj      = $xmax + 10 - $break_point[$last];
+
+$y_est = 0;
+for($n = 0; $n <= $nterms; $n++){
+	$y_est += ${p_min.$n.$last} * power($x_adj, $n);
+}
+$y_est = $y_est - $widen * $pmin_sig;
+
+$chk   = 0;
+if($y_est < $bot){
+	$limit = $bot;
+	$nv = 0;
+	${a.$nv}   = ${p_min.$nv.$last}- $widen * $pmin_sig;
+	for($n = 1; $n <= $nterms; $n++){
+		${a.$n}    = ${p_min.$n.$last};
 	}
-	$y_est = $y_est - $widen * $pmin_sig + $avgy_min;
-	
-	$chk   = 0;
-	if($y_est < $bot){
-		$limit = $bot;
-		$nv = 0;
-		${a.$nv}   = ${p_min.$nv.$last}- $widen * $pmin_sig + $avgy_min;
-		for($n = 1; $n <= $nterms; $n++){
-			${a.$n}    = ${p_min.$n.$last};
-		}
-		$ind       = -1;
-	
-		find_cross_point();
-	
-		$x_pos += $break_point[$last];
-	
-		$bot_excess = sprintf "%5.1f", $x_pos;
-		if($bot_excess <= $today){
-			if($lim_c =~ /y/){
-				pgsci(6);
-				pgptxt($xtxt, $ytxt, 0, 0, "Data seem alreday in Lower Yellow  Limit Zone ($bot).");
-			}else{
-				pgsci(2);
-				pgptxt($xtxt, $ytxt, 0, 0, "Data Seem already in Lower Red  Limit Zone ($bot).");
-			}
-	
+	$ind       = -1;
+
+	find_cross_point();
+
+	$x_pos += $break_point[$last];
+
+	$bot_excess = sprintf "%5.1f", $x_pos;
+	if($bot_excess <= $today){
+		if($lim_c =~ /y/){
+			pgsci(6);
+			pgptxt($xtxt, $ytxt, 0, 0, "Data seem alreday in Lower Yellow  Limit Zone ($bot).");
 		}else{
-			if($lim_c =~ /y/){
-				pgsci(6);
-				pgptxt($xtxt, $ytxt, 0, 0, "Lower Yellow  Limit ($bot) may be violated around Year: $bot_excess");
-			}else{
-				pgsci(2);
-				pgptxt($xtxt, $ytxt, 0, 0, "Lower Red  Limit ($bot) may be violated around Year: $bot_excess");
-			}
+			pgsci(2);
+			pgptxt($xtxt, $ytxt, 0, 0, "Data Seem already in Lower Red  Limit Zone ($bot).");
 		}
-		pgsci(1);
-		$chk = 1;
+
+	}else{
+		if($lim_c =~ /y/){
+			pgsci(6);
+			pgptxt($xtxt, $ytxt, 0, 0, "Lower Yellow  Limit ($bot) may be violated around Year: $bot_excess");
+		}else{
+			pgsci(2);
+			pgptxt($xtxt, $ytxt, 0, 0, "Lower Red  Limit ($bot) may be violated around Year: $bot_excess");
+		}
 	}
+	pgsci(1);
+	$chk = 1;
+}
 
 #
 #--- check whether the upper limt will be violated in near future
 #
 
-	$top_excess = '';
-	$x_adj      = $xmax + 10 - $break_point[$last];
-	
-	$y_est = 0;
-	for($n = 0; $n <= $nterms; $n++){
-		$y_est += ${p_max.$n.$last} * power($x_adj, $n);
+$top_excess = '';
+$x_adj      = $xmax + 10 - $break_point[$last];
+
+$y_est = 0;
+for($n = 0; $n <= $nterms; $n++){
+	$y_est += ${p_max.$n.$last} * power($x_adj, $n);
+}
+$y_est = $y_est +  $widen * $pmax_sig;
+
+if($y_est > $top){
+	$limit = $top;
+	$nv = 0;
+	${a.$nv}   = ${p_max.$nv.$last}- $widen * $pmax_sig;
+	for($n = 1; $n <= $nterms; $n++){
+		${a.$n}    = ${p_max.$n.$last};
 	}
-	$y_est = $y_est +  $widen * $pmax_sig + $avgy_max;
-	
-	if($y_est > $top){
-		$limit = $top;
-		$nv = 0;
-		${a.$nv}   = ${p_max.$nv.$last}- $widen * $pmax_sig + $avgy_max;
-		for($n = 1; $n <= $nterms; $n++){
-			${a.$n}    = ${p_max.$n.$last};
-		}
-		$ind   = 1;
-	
-		find_cross_point();
-	
-		$x_pos += $break_point[$last];
-	
-		$top_excess = sprintf "%5.1f", $x_pos;
-		$ytxt2 = $ytxt;
-		if($chk > 0){
-			$ytxt2 = $ytxt - 0.05 * $ydiff;
-		}
-		pgsci(2);
-		if($top_excess < $today){
-			if($lim_c =~ /y/){
-				pgsci(6);
-				pgptxt($xtxt, $ytxt2, 0, 0, "Data seem already in Upper Yellow  Limit Zone ($top).");
-			}else{
-				pgsci(2);
-				pgptxt($xtxt, $ytxt, 0, 0, "Data seem already in Upper Red  Limit Zone ($top).");
-			}
+	$ind   = 1;
+
+	find_cross_point();
+
+	$x_pos += $break_point[$last];
+
+	$top_excess = sprintf "%5.1f", $x_pos;
+	$ytxt2 = $ytxt;
+	if($chk > 0){
+		$ytxt2 = $ytxt - 0.05 * $ydiff;
+	}
+	pgsci(2);
+	if($top_excess < $today){
+		if($lim_c =~ /y/){
+			pgsci(6);
+			pgptxt($xtxt, $ytxt2, 0, 0, "Data seem already in Upper Yellow  Limit Zone ($top).");
 		}else{
-			if($lim_c =~ /y/){
-				pgsci(6);
-				pgptxt($xtxt, $ytxt2, 0, 0, "Upper Yellow  Limit ($top) may be violated around Year: $top_excess");
-			}else{
-				pgsci(2);
-				pgptxt($xtxt, $ytxt, 0, 0, "Upper Red  Limit ($top) may be violated around Year: $top_excess");
-			}
+			pgsci(2);
+			pgptxt($xtxt, $ytxt, 0, 0, "Data seem already in Upper Red  Limit Zone ($top).");
 		}
-		pgsci(1);
+	}else{
+		if($lim_c =~ /y/){
+			pgsci(6);
+			pgptxt($xtxt, $ytxt2, 0, 0, "Upper Yellow  Limit ($top) may be violated around Year: $top_excess");
+		}else{
+			pgsci(2);
+			pgptxt($xtxt, $ytxt, 0, 0, "Upper Red  Limit ($top) may be violated around Year: $top_excess");
+		}
 	}
+	pgsci(1);
 }
 
 #
@@ -1134,14 +908,9 @@ pgptxt(2006.10, $ymin, 90, 0, "Relaxed EPHIN Const.");
 pgsci(5);
 pgarro(2008.3, $ymin, 2008.3, $head);
 pgsci(1);
-pgptxt(2008.3 $ymin, 90, 0, "ACIS Det House Off");
+pgptxt(2008.3, $ymin, 90, 0, "ACIS Det House Off");
 
-
-if($range =~/\q/i || $range =~ /w/i){
-	pglabel("Time (DOY/Year:$y_beg)", "$col_name", "");
-}else{
-	pglabel("Time (Year)", "$col_name", "");
-}
+pglabel("Time (Year)", "$col_name", "");
 
 pgclos();
 system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
@@ -1157,13 +926,7 @@ system("rm pgplot.ps");
 
 open(OUT, ">$out_data");
 
-if($range =~ /f/i){
-	open(OUT2, ">>$www_dir/full_range_results_temp");
-}elsif($range =~ /q/i){
-	open(OUT2, ">>$www_dir/quarterly_results_temp");
-}elsif($range =~ /w/i){
-	open(OUT2, ">>$www_dir/weekly_results_temp");
-}
+open(OUT2, ">>$www_dir/full_range_results_temp");
 
 #
 #--- special treatment for HRC I, S, OFF status (for /data/mta4/Deriv/ only);
@@ -1199,7 +962,7 @@ for($k = 0; $k < $num_break; $k++){
 	print OUT "\n";
 	print OUT "lower:\t";
 	$nv = 0;
-	$intercept = ${p_min.$nv.$k} + ${avg_min.$k};
+	$intercept = ${p_min.$nv.$k};
 
 	print OUT  "$intercept\t";
 	$bp_short = sprintf "%5.4f", $break_point[$k];
@@ -1214,7 +977,7 @@ for($k = 0; $k < $num_break; $k++){
 
 	print OUT "upper:\t";
 	$nv = 0;
-	$intercept = ${p_max.$nv.$k} + ${avg_max.$k};
+	$intercept = ${p_max.$nv.$k};
 	print OUT  "$intercept\t";
 	print OUT2 "$intercept";
 	for($n = 1; $n < $nterms; $n++){
@@ -1240,38 +1003,34 @@ for($k = $num_break; $k < 8; $k++){
 }
 
 
-if($range =~ /f/i){
-	if($bot_excess !~ /\d/){
-		$bot_excess = 'no violation';
-		print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
-		print OUT2 "<>";
-	}else{
-		if($bot_excess <= $today){
-			$temp = sprintf "%5.2f", $today;
-			print OUT "Lower limit violation estimated date: currently in  (Limit: $bot)\n";
-			print OUT2 "$temp<>";
-		}else{
-			print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
-			print OUT2 "$bot_excess<>";
-		}
-	}
-		
-	if($top_excess !~ /\d/){
-		$top_excess = 'no violation';
-		print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
-		print OUT2 "<>";
-	}else{
-		if($top_excess <= $today){
-			$temp = sprintf "%5.2f", $today;
-			print OUT "Upper limit violation estimated date: currently in (Limit: $top)\n";
-			print OUT2 "$temp<>";
-		}else{
-			print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
-			print OUT2 "$top_excess<>";
-		}
-	}
+if($bot_excess !~ /\d/){
+	$bot_excess = 'no violation';
+	print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
+	print OUT2 "<>";
 }else{
-	print OUT2 '<><>';
+	if($bot_excess <= $today){
+		$temp = sprintf "%5.2f", $today;
+		print OUT "Lower limit violation estimated date: currently in  (Limit: $bot)\n";
+		print OUT2 "$temp<>";
+	}else{
+		print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
+		print OUT2 "$bot_excess<>";
+	}
+}
+	
+if($top_excess !~ /\d/){
+	$top_excess = 'no violation';
+	print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
+	print OUT2 "<>";
+}else{
+	if($top_excess <= $today){
+		$temp = sprintf "%5.2f", $today;
+		print OUT "Upper limit violation estimated date: currently in (Limit: $top)\n";
+		print OUT2 "$temp<>";
+	}else{
+		print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
+		print OUT2 "$top_excess<>";
+	}
 }
 
 print OUT2 "\n";
@@ -1367,50 +1126,17 @@ if($lim_s =~ /both/i){
 #--- plot data points
 #
 
-	if($range =~ /f/i){
-	 	for($i = 0; $i < $total; $i++){
-		  	if($data[$i] >= $y_low && $data[$i] <= $y_top){
-			   	pgsci(1);
-		  	}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
-			   	pgsci(2);
-		  	}else{
-			   	pgsci(6);
-		  	}
-		  	pgpt(1,$time[$i], $data[$i], 1);
-		  	pgsci(1);
-	 	}
-	}else{
-	 	pgsch(2);
-	 	pgslw(10);
-	 	OUTER:
-	 	for($i = 0; $i < $total; $i++){
-		  	if($time[$i] < $datastart){
-			   	next OUTER;
-		  	}elsif($time[$i] > $end_time){
-			   	last OUTER;
-		  	}
-	
-		  	$y_part = int($time[$i]);
-		  	$d_part = $time[$i] - $y_part;
-		  	if($y_part > $y_beg){
-			   	$d_part *= $multi2;
-			   	$d_part += $multi;
-		  	}else{
-			   	$d_part *= $multi;
-		  	}
-		  	if($data[$i] >= $y_low && $data[$i] <= $y_top){
-			   	pgsci(1);
-		  	}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
-			   	pgsci(2);
-		  	}else{
-			   	pgsci(6);
-		  	}
-		  	pgpt(1,$d_part, $data[$i], 1);
-		  	pgsci(1);
-	 	}
-	 	pgsch(1);
-	 	pgslw(5);
-	}
+ 	for($i = 0; $i < $total; $i++){
+	  	if($data[$i] >= $y_low && $data[$i] <= $y_top){
+		   	pgsci(1);
+	  	}elsif($data[$i] <= $r_low || $data[$i] >= $r_top){
+		   	pgsci(2);
+	  	}else{
+		   	pgsci(6);
+	  	}
+	  	pgpt(1,$time[$i], $data[$i], 1);
+	  	pgsci(1);
+ 	}
 
 
 #
@@ -1422,7 +1148,7 @@ if($lim_s =~ /both/i){
 		$x_range = $break_point[$k+1] - $break_point[$k];
 		$step    = $x_range/100;
 		$n       = 0;
-		$y_est   = ${p_min.$n.$k}  - $widen * $pmin_sig + ${avg_min.$k};
+		$y_est   = ${p_min.$n.$k}  - $widen * $pmin_sig;
 
 		pgmove($break_point[$k], $y_est);
 
@@ -1432,7 +1158,7 @@ if($lim_s =~ /both/i){
 			for($n = 0; $n <= $nterms; $n++){
 				$y_est += ${p_min.$n.$k} * power($x_adj, $n);
 			}
-			$y_est = $y_est - $widen * $pmin_sig + ${avg_min.$k};
+			$y_est = $y_est - $widen * $pmin_sig;
 			$x_est = $x_adj + $break_point[$k];
 			pgdraw($x_est, $y_est);
 		}
@@ -1442,7 +1168,7 @@ if($lim_s =~ /both/i){
 		$x_range = $break_point[$k+1] - $break_point[$k];
 		$step    = $x_range/100;
 		$n       = 0;
-		$y_est   = ${p_max.$n.$k}  + $widen * $pmax_sig + ${avg_max.$k};
+		$y_est   = ${p_max.$n.$k}  + $widen * $pmax_sig;
 
 		pgmove($break_point[$k], $y_est);
 
@@ -1452,7 +1178,7 @@ if($lim_s =~ /both/i){
 			for($n = 0; $n <= $nterms; $n++){
 				$y_est += ${p_max.$n.$k} * power($x_adj, $n);
 			}
-			$y_est = $y_est + $widen * $pmax_sig + ${avg_max.$k};
+			$y_est = $y_est + $widen * $pmax_sig;
 			$x_est = $x_adj + $break_point[$k];
 			pgdraw($x_est, $y_est);
 		}
@@ -1632,7 +1358,7 @@ if($lim_s =~ /both/i){
 		print OUT "\n";
 		print OUT "lower:\t";
 		$nv = 0;
-		$intercept = ${p_min.$nv.$k} + ${avg_min.$k};
+		$intercept = ${p_min.$nv.$k};
 	
 		print OUT  "$intercept\t";
 		$bp_short = sprintf "%5.4f", $break_point[$k];
@@ -1647,7 +1373,7 @@ if($lim_s =~ /both/i){
 	
 		print OUT "upper:\t";
 		$nv = 0;
-		$intercept = ${p_max.$nv.$k} + ${avg_max.$k};
+		$intercept = ${p_max.$nv.$k};
 		print OUT  "$intercept\t";
 		print OUT2 "$intercept";
 		for($n = 1; $n <= $nterms; $n++){
@@ -1673,38 +1399,34 @@ if($lim_s =~ /both/i){
 	}
 	
 	
-	if($range =~ /f/i){
-		if($bot_excess !~ /\d/){
-			$bot_excess = 'no violation';
-			print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
-			print OUT2 "<>";
-		}else{
-			if($bot_excess <= $today){
-				$temp = sprintf "%5.2f", $today;
-				print OUT "Lower limit violation estimated date: currently in  (Limit: $bot)\n";
-				print OUT2 "$temp<>";
-			}else{
-				print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
-				print OUT2 "$bot_excess<>";
-			}
-		}
-			
-		if($top_excess !~ /\d/){
-			$top_excess = 'no violation';
-			print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
-			print OUT2 "<>";
-		}else{
-			if($top_excess <= $today){
-				$temp = sprintf "%5.2f", $today;
-				print OUT "Upper limit violation estimated date: currently in (Limit: $top)\n";
-				print OUT2 "$temp<>";
-			}else{
-				print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
-				print OUT2 "$top_excess<>";
-			}
-		}
+	if($bot_excess !~ /\d/){
+		$bot_excess = 'no violation';
+		print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
+		print OUT2 "<>";
 	}else{
-		print OUT2 '<><>';
+		if($bot_excess <= $today){
+			$temp = sprintf "%5.2f", $today;
+			print OUT "Lower limit violation estimated date: currently in  (Limit: $bot)\n";
+			print OUT2 "$temp<>";
+		}else{
+			print OUT "Lower limit violation estimated date: $bot_excess (Limit: $bot)\n";
+			print OUT2 "$bot_excess<>";
+		}
+	}
+		
+	if($top_excess !~ /\d/){
+		$top_excess = 'no violation';
+		print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
+		print OUT2 "<>";
+	}else{
+		if($top_excess <= $today){
+			$temp = sprintf "%5.2f", $today;
+			print OUT "Upper limit violation estimated date: currently in (Limit: $top)\n";
+			print OUT2 "$temp<>";
+		}else{
+			print OUT "Upper limit violation estimated date: $top_excess (Limit: $top)\n";
+			print OUT2 "$top_excess<>";
+		}
 	}
 	
 	print OUT2 "\n";
@@ -1867,326 +1589,6 @@ sub find_cross_point{
 	}
 }
 
-
-###############################################################################
-###sec1998_to_fracyear: change sec from 1998 to time in year               ####
-###############################################################################
-
-sub sec1998_to_fracyear{
-
-        my($t_temp, $normal_year, $leap_year, $year, $j, $k, $chk, $jl, $base, $yfrac, $year_date);
-
-        ($t_temp) = @_;
-
-        $t_temp +=  86400;
-
-        $normal_year = 31536000;
-        $leap_year   = 31622400;
-        $year        = 1998;
-
-        $j = 0;
-        OUTER:
-        while($t_temp > 1){
-                $jl = $j + 2;
-                $chk = 4.0 * int(0.25 * $jl);
-                if($chk == $jl){
-                        $base = $leap_year;
-                }else{
-                        $base = $normal_year;
-                }
-
-                if($t_temp > $base){
-                        $year++;
-                        $t_temp -= $base;
-                        $j++;
-                }else{
-                        $yfrac = $t_temp/$base;
-                        $year_date = $year + $yfrac;
-                        last OUTER;
-                }
-        }
-
-        return $year_date;
-}
-
-
-
-
-#######################################################################################################
-### boxed_interval_min_max: find  min and max points in a given interval  and create a new data set ###
-#######################################################################################################
-
-sub boxed_interval_min_max{
-
-#
-#--- first remove extreme outlyers
-#
-
-	@gtemp  = sort{$a<=>$b} @data;
-	$gstart = int (0.01 * $total);
-	$gstop  = $total - $gstart;
-	$gdiff  = $gstop - $gstart;
-	$gtot   = 0;
-	$gtot2  = 0;
-	$gtot3  = 0;
-	$gtot4  = 0;
-	$sum    = 0;
-	$sum2   = 0;
-	$sump   = 0;
-	$sump2  = 0;
-	$chk    = 0;
-	for($i = $gstart; $i < $gstop; $i++){
-		$sum  += $gtemp[$i];
-		$sum2 += $gtemp[$i] * $gtemp[$i];
-		$gtot++;
-		if($gtemp[$i] == 0){
-			$gtot2++;
-		}elsif($gtemp[$i] > 0){
-			$sump  += $gtemp[$i];
-			$sump2 += $gtemp[$i] * $gtemp[$i];
-			$gtot3++;
-		}elsif($gtemp[$i] < 0){
-			$gtot4++;
-		}
-	}
-	$rchk  = $gtot2/$gdiff;
-	$rchkn = $gtot4/$gdiff;
-#
-#--- if most of the data is "0", set the range between -1 and 1.
-#
-
-	if($rchk > 0.98){
-		$gtot     = $gtot2;
-		$test_avg = 0;
-		$test_sig = 1.0;
-	}
-	if($gtot == 0){
-		$chk = 1;
-	}else{ 
-#
-#--- check whether there is the negative data; if that is the case, 
-#--- we include "0" as a part of the data, since "0" is middle of the data.
-#--- if not, exlculde "0", since "0" means most likely "no data".
-#
-		if($rchk < 0.98){
-			if($rchkn < 0.01){
-				$test_avg = $sump/$gtot3;
-				$var      = $sump2/$gtot3 - $test_avg * $test_avg;
-				if($var < 0){
-					$var = 2 * abs($var);
-				}elsif($var == 0){
-					$var = 0.01;
-				}
-				$test_sig     = sqrt($var);
-				$t_min = $test_avg -  4.0 * $test_sig;
-				$t_max = $test_avg +  4.0 * $test_sig;
-#				if($rchk > 0.5){
-#					if($t_min > 0){
-#						$t_min = 0;
-#					}
-#				}
-					
-			}else{
-				$test_avg = $sum/$gtot;
-				$var      = $sum2/$gtot - $test_avg * $test_avg;
-				if($var < 0){
-					$var = 2 * abs($var);
-				}elsif($var == 0){
-					$var = 0.01;
-				}
-				$test_sig     = sqrt($var);
-				$t_min = $test_avg -  4.0 * $test_sig;
-				$t_max = $test_avg +  4.0 * $test_sig;
-			}
-		}
-#
-#---- try again to limit data range
-#
-		$sum   = 0;
-		$sum2  = 0;
-		$t_tot = 0;
-		for($i = 0; $i < $total; $i++){
-			if($data[$i] >= $t_min && $data[$i] <= $t_max){
-				$sum  += $data[$i];
-				$sum2 += $data[$i] * $data[$i];
-				$t_tot++;
-			}
-		}
-		$test_avg = $sum/$t_tot;
-		$var      = $sum2/$t_tot - $test_avg * $test_avg;
-		if($var < 0){
-			$var = 2 * abs($var);
-		}elsif($var == 0){
-			$var = 0.1;
-		}
-		$test_sig     = sqrt($var);
-		$t_min = $test_avg -  3.0 * $test_sig;
-		$t_max = $test_avg +  3.0 * $test_sig;
-#		if($rchk > 0.5){
-#			if($t_min > 0){
-#				$t_min = 0;
-#			}
-#		}
-	
-		if($test_sig < 0){
-			$chk = 1;
-		}
-	}
-
-	if($chk ==  0){
-
-#
-#---- initialize data arrays according to # of breaking points
-#
-
-		for($k = 0; $k < $num_break; $k++){
-			@{data_s.$k} = ();
-			@{time_s.$k} = ();
-			${cnt.$k}    = 0;
-		}
-			
-		OUTER:
-		for($i = 0; $i < $total; $i++){
-			if($data[$i] >= $t_min && $data[$i] <= $t_max){
-#
-#--- IRU 1&2 were on at the same time between 2003.43 and 2003.55.
-#--- this causes a fitting a misbehavior; the data between them 
-#--- are excluded from a fitting data_s.
-#
-				if($time[$i] > 2003.40 && $time[$i] < 2003.60){
-					next OUTER;
-				}
-
-				for($k = 0; $k < $num_break; $k++){
-					if($time[$i] >= $break_point[$k] && $time[$i] < $break_point[$k+1]){
-						push(@{data_s.$k}, $data[$i]);
-						push(@{time_s.$k}, $time[$i]);
-						${cnt.$k}++;
-					}
-				}
-			}
-		}
-
-		for($k = 0; $k < $num_break; $k++){
-			$sum  = 0;
-			$sum2 = 0;
-			$add  = 0;
-			for($j = 0; $j < ${cnt.$k}; $j++){
-				$sum  += ${data_s.$k}[$j];
-				$sum2 += ${data_s.$k}[$j] * ${data_s.$k}[$j];
-				$add++;
-			}
-			if($add > 0){
-				$n_avg = $sum/$add;
-				$var   = $sum2/$add - $n_avg * $n_avg;
-				if($var < 0){
-					$var = 2.0 * abs($var);
-				}elsif($var == 0){
-					$var = 0.1;
-				}
-				$std   = sqrt($var);
-				$l_lim = $n_avg - 3.0 * $std;
-				$u_lim = $n_avg + 3.0 * $std;
-	
-				@test_data = ();
-				@test_time = ();
-				$test_cnt  = 0;
-				$t_begin   = $break_point[$k];
-	
-				for($j = 0; $j < ${cnt.$k}; $j++){
-					if(${data_s.$k}[$j]>= $l_lim && ${data_s.$k}[$j] <= $u_lim){
-						push(@test_data, ${data_s.$k}[$j]);
-						push(@test_time, ${time_s.$k}[$j]);
-						$test_cnt++;
-					}
-				}
-
-				boxed_interval_binning();
-			
-				@{box_time_s.$k} = @box_time;
-				@{box_min.$k}    = @box_min;
-				@{box_max.$k}    = @box_max;
-				${box_cnt.$k}    = $w_cnt;
-			}else{
-			
-				@{box_time_s.$k} = ();
-				@{box_min.$k}    = ();
-				@{box_max.$k}    = ();
-				${box_cnt.$k}    = 0;
-			}
-		}
-	}
-}
-
-##################################################################################
-### boxed_interval_binning: binning the data for a given box size              ###
-##################################################################################
-
-sub boxed_interval_binning{
-	my ($i);
-	@box_min    = ();
-	@box_max    = ();
-	@box_time   = ();
-	$w_cnt       = 0;
-
-	$start       = $t_begin;
-	$end         = $start + $box_length;
-	$wmin        = 1e14;
-	$wmax        = -1e14;
-
-	if($start > $test_time[0]){
-		while($start > $test_time[0]){
-			$start -=  $box_length;
-		}
-		$end    = $start + $box_length;
-	}
-
-	for($i = 1; $i < $test_cnt; $i++){
-		if($test_time[$i] >= $start && $test_time[$i] < $end){
-			if($test_data[$i] < $wmin){
-				$wmin = $test_data[$i];
-			}
-			if($test_data[$i] > $wmax){
-				$wmax = $test_data[$i];
-			}
-		}elsif($test_time[$i] >= $end){
-				
-			$mid   = $start + 0.5 * $box_length;
-			if($wmin < 100000 && $wmax > -100000){
-				push(@box_time, $mid);
-				push(@box_min, $wmin);
-				push(@box_max, $wmax);
-				$w_cnt++;
-			}
-
-			OUTER:
-			while($test_time[$i] >= $end){
-				$start = $end;
-				$end   = $start + $box_length;
-				if($test_time[$i] >= $start && $test_time[$i] < $end){
-					last OUTER;
-				}
-			}
-			$wmin =  1e14;
-			$wmax = -1e14;
-			
-			if($data[$i] < $wmin){
-				$wmin = $test_data[$i];
-			}
-			if($test_data[$i] > $wmax){
-				$wmax = $test_data[$i];
-			}
-		}
-	}
-
-	$mid   = $start + 0.5 * $box_length;
-	if($wmin < 100000 && $wmax > -100000){
-		push(@box_time, $mid);
-		push(@box_min, $wmin);
-		push(@box_max, $wmax);
-		$w_cnt++;
-	}
-}
 
 
 ########################################################################
