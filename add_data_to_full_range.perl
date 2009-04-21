@@ -6,7 +6,7 @@
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Apr 13, 2009							#
+#		last update Apr 21, 2009							#
 #												#
 #################################################################################################
 
@@ -79,7 +79,7 @@ $f_lim   =~ s/_data\.fits/_min_max\.fits/g;
 
 $q_line  =  $f_line;
 $q_line  =~ s/Full_range/Quarterly/g;
-$q_line  =~ s/_data//g;
+$q_line  =~ s/_data\.fits/\.fits/g;
 $q_line  =~ s/fits/fits\.gz/g;
 @q_list  =  split(/\s+/, $q_line);
 #---------TEST TEST

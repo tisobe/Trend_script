@@ -1732,9 +1732,9 @@ sub find_cross_point{
 	$step = 1/12;
 	if($ind > 0){
 		$x_est = $xmax - $break_point[$last];
-		$yest = 0;
+		$y_est = 0;
 		for($n = 0; $n <= $nterms; $n++){
-			$yest += ${a.$n} * power($x_est, $n);
+			$y_est += ${a.$n} * power($x_est, $n);
 		}
 		if($y_est <=  $limit){
 			OUTER:
@@ -1750,7 +1750,7 @@ sub find_cross_point{
 					$diff1  = $y_est  - $limit;
 					$x_est -= $step;
 
-					$_yest2 = 0;
+					$y_est2 = 0;
 					for($n = 0; $n <= $nterms; $n++){
 						$y_est2 += ${a.$n} * power($x_est, $n);
 					}
