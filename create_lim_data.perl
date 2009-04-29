@@ -576,8 +576,8 @@ sub boxed_interval_min_max{
 			$var = 0.1;
 		}
 		$test_sig     = sqrt($var);
-		$t_min = $test_avg -  3.0 * $test_sig;
-		$t_max = $test_avg +  3.0 * $test_sig;
+		$t_min = $test_avg -  4.0 * $test_sig;
+		$t_max = $test_avg +  4.0 * $test_sig;
 #		if($rchk > 0.5){
 #			if($t_min > 0){
 #				$t_min = 0;
@@ -641,8 +641,8 @@ sub boxed_interval_min_max{
 					$var = 0.1;
 				}
 				$std   = sqrt($var);
-				$l_lim = $n_avg - 3.0 * $std;
-				$u_lim = $n_avg + 3.0 * $std;
+				$l_lim = $n_avg - 4.0 * $std;
+				$u_lim = $n_avg + 4.0 * $std;
 	
 				@test_data = ();
 				@test_time = ();

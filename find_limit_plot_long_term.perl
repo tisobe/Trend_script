@@ -10,7 +10,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Apr 13, 2009							#
+#		last update Apr 29, 2009							#
 #												#
 #################################################################################################
 
@@ -22,8 +22,8 @@ $www_dir1 = '/data/mta/www/mta_envelope_trend/';
 $www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
 $save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
 
-#$www_dir1 = './';
-#$www_dir2 = './';
+$www_dir1 = './';
+$www_dir2 = './';
 
 #
 #--- setting:
@@ -31,7 +31,7 @@ $save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
 
 #------------------------------------------------------------------------------------------------
 
-$datastart = 2000; 		#--- pre-set plotting range start date for envelopes for full range estimate
+$datastart    = 2000; 		#--- pre-set plotting range start date for envelopes for full range estimate
 
 $hour_binning = 1;		#--- if you want, hour binning, set this to 1.
 				#--- otherwise, it will use the given binning 
@@ -57,6 +57,7 @@ $limit_table2 = "$save_dir/limit_table";
 $fits   = $ARGV[0];		#--- input fits file, long term data saved format
 $col    = $ARGV[1];		#--- data column name e.g. oobthr44_avg
 $nterms = $ARGV[2];		#--- degree of polynomial fit, 2 or 3 (linear and quad)
+				#--- if this is e, exponential, and s sine curve (effective only for f)
 $lim_c  = $ARGV[3];		#--- operational limit: yellow (y) or red (r) 
 $range  = $ARGV[4];		#--- whether this is full, quarterly, or weekly
 $lim_s  = $ARGV[5];		#--- limit selection: mta, op, or both
@@ -65,7 +66,7 @@ $lim_s  = $ARGV[5];		#--- limit selection: mta, op, or both
 #--- set name of min/max envelope data file name
 #
 
-$lfits  = $fits;
+$lfits  =  $fits;
 $lfits  =~ s/_data\.fits/_min_max\.fits/;
 
 #
@@ -87,7 +88,7 @@ if($lim_s =~ /mta/i){
 }
 
 #
-#--- if it is not a full range plot, give winder envelope to cover the
+#--- if it is not a full range plot, give wider envelope to cover the
 #--- deficiencies of data points
 #
 
@@ -144,8 +145,8 @@ $today    = $today + $uyday/$y_length;
 #---- set data ranges, and a box size.
 #
 
-$end_time = $uyear + 1900 + 1;
-$box_length   = 0.019178082;    	#--- binning size: one week in year
+$end_time   = $uyear + 1900 + 1;
+$box_length = 0.019178082;    		#--- binning size: one week in year
 
 #
 #--- read break points in year
@@ -173,9 +174,9 @@ $num_break++;
 #--- check file name, modify it, and create output file names
 #
 
-@atemp = split(/_avg/i, $col);
-$msid  = uc($atemp[0]);
-$line  = '';
+@atemp     = split(/_avg/i, $col);
+$msid      = uc($atemp[0]);
+$line      = '';
 
 @atemp     = split(/\_avg/i, $col);
 $col_name  = uc ($atemp[0]);
@@ -326,7 +327,7 @@ $in_line = `dmlist \"$line\" opt=data`;
 @min    = ();
 @max    = ();
 $ltotal = 0;	
-$rg_min = 1e14;
+$rg_min =  1e14;
 $rg_max = -1e14;
 
 OUTER:
@@ -341,7 +342,7 @@ foreach $ent (@in_data){
 #
 #--- save only the last period of data
 #
-				if($atemp[4] > $num_break -2){
+				if($atemp[1] > $break_point[$num_break -1]){
 					push(@ltime, $atemp[1]);
 					push(@min,   $atemp[2]);
 					push(@max,   $atemp[3]);
@@ -354,7 +355,7 @@ foreach $ent (@in_data){
 					$rg_max = $atemp[3];
 				}
 			}else{
-				if($atemp[5] > $num_break -2){
+				if($atemp[2] > $break_point[$num_break -1]){
 					push(@ltime, $atemp[2]);
 					push(@min,   $atemp[3]);
 					push(@max,   $atemp[4]);
@@ -384,14 +385,14 @@ pgslw(5);
 #--- establish  x axis range 
 #
 
-$xmin     = 1999;
-$xmax     = $end_time;
-$xdiff    = $xmax - $xmin;
-$xmin    -= 0.05 * $ xdiff;
-$xmax    += 0.05 * $ xdiff;
-$xdiff    = $xmax - $xmin;
-$xmid     = $xmin + 0.5 * $xdiff;
-$xtxt     = $xmin + 0.1 * $xdiff;
+$xmin  = 1999;
+$xmax  = $end_time;
+$xdiff = $xmax - $xmin;
+$xmin -= 0.05 * $ xdiff;
+$xmax += 0.05 * $ xdiff;
+$xdiff = $xmax - $xmin;
+$xmid  = $xmin + 0.5 * $xdiff;
+$xtxt  = $xmin + 0.1 * $xdiff;
 
 
 #
@@ -409,9 +410,10 @@ $ydiff = $ymax - $ymin;
 #--- if the plotting range is too small, fix it
 #
 if($ydiff < 0.01){
-	$ymin  = $test_avg - 0.01;
-	$ymax  = $test_avg + 0.01;
-	$ydiff = 0.02;
+	$test_avg = 0.5 *($ymin + $ymax);
+	$ymin     = $test_avg - 0.01;
+	$ymax     = $test_avg + 0.01;
+	$ydiff    = 0.02;
 }
 
 $ytxt  = $ymax - 0.1 * $ydiff;
@@ -434,53 +436,63 @@ for($i = 0; $i < $total; $i++){
 	pgsci(1);
 }
 
-
 #
 #---- read previously fitted envelope data
 #
 
 $tcol = $col;
+
 if($tcol !~ /_avg/i){
 	$tcol = "$col"."_avg";
 }
 $ucol = uc($tcol);
+
 $e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $ucol`;
+
 if($e_results !~ /$ucol/i){
 	$lcol = lc($tcol);
 	$e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $lcol`;
 }
 
 @break_year = ();
-@low_a0     = ();
-@low_a1     = ();
-@low_a2     = ();
-@top_a3     = ();
-@top_a0     = ();
-@top_a1     = ();
-@top_a2     = ();
-@top_a3     = ();
-$sep_cnt    = 0;
-@atemp = split(/<>/, $e_results);
+for($n = 0; $n < 8; $n++){
+	@{low_a.$n} = ();
+	@{top_a.$n} = ();
+}
+
+$iterms = $nterms;
+if($nterms =~ /e/i){
+	$iterms = 3;
+}elsif($nterms =~ /s/i){
+	$iterms = 7;
+}
+
+$sep_cnt = 0;
+@atemp   = split(/<>/, $e_results);
 OUTER:
-for($i = 1; $i < $num_break; $i++){
-	@btemp = split(/=l=/, $atemp[$i]);
+for($k = 1; $k < $num_break; $k++){
+
+	@btemp = split(/=l=/, $atemp[$k]);
 	if($btemp[0] eq ''){
 		last OUTER;
 	}
+
 	push(@break_year, $btemp[0]);
 	@ctemp = split(/=u=/, $btemp[1]);
 	@dtemp = split(/:/,   $ctemp[0]);
-	push(@{low_a.0}, $dtemp[0]);
-	push(@{low_a.1}, $dtemp[1]);
-	push(@{low_a.2}, $dtemp[2]);
-	push(@{low_a.3}, $dtemp[3]);
+
+	for($n = 0; $n <= $iterms; $n++){
+		${low_a.$n}[$sep_cnt] = $dtemp[$n];
+	}
+
 	@dtemp = split(/:/,   $ctemp[1]);
-	push(@{top_a.0}, $dtemp[0]);
-	push(@{top_a.1}, $dtemp[1]);
-	push(@{top_a.2}, $dtemp[2]);
-	push(@{top_a.3}, $dtemp[3]);
+
+	for($n = 0; $n <= $iterms; $n++){
+		${top_a.$n}[$sep_cnt] = $dtemp[$n];
+	}
 	$sep_cnt++;
 }
+
 
 #
 #--- plot envelope except the last break period
@@ -489,34 +501,111 @@ for($i = 1; $i < $num_break; $i++){
 for($k = 0; $k < $sep_cnt; $k++){
 	pgsci(4);
 	$x_range = $break_point[$k+1] - $break_point[$k];
-	$step = $x_range/100;
-	pgmove($break_point[$k], ${low_a.0}[$k]);
-	for($j = 1; $j < 100; $j++){
-		$x_adj = $step * $j;
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${low_a.$n}[$k] * power($x_adj, $n);
-		}
-		$x_est = $x_adj + $break_point[$k];
-		pgdraw($x_est, $y_est);
-	}
+	$step    = $x_range/100;
 
-
-	pgmove($break_point[$k], ${top_a.0}[$k]);
-	for($j = 1; $j < 100; $j++){
-		$x_adj = $step * $j;
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${top_a.$n}[$k] * power($x_adj, $n);
+	if($nterms =~ /e/i){
+#
+#--- exponential fit case
+#
+		$x_adj = 0;
+		for($n = 0; $n < 3; $n++){
+			$a[$n] = ${low_a.$n}[$k];
 		}
-		$x_est = $x_adj + $break_point[$k];
-		pgdraw($x_est, $y_est);
-	}
+		$y_est = exp_func($x_adj) + $a[0];
+
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = exp_func($x_adj) + $a[0];
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+
+		$x_adj = 0;
+		for($n = 0; $n < 3; $n++){
+			$a[$n] = ${top_a.$n}[$k];
+		}
+
+		$y_est = exp_func($x_adj) + $a[0];
+
+		pgmove($break_point[$k], ${top_a.0}[$k]);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = exp_func($x_adj) + $a[0];
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+	}elsif($nterms =~ /s/i){
+#
+#--- sine + exp + linear case
+#
+		$x_adj = 0;
+
+		$y_est = sine_model(${low_a.0}[$k],${low_a.1}[$k],${low_a.2}[$k],
+				${low_a.3}[$k],${low_a.4}[$k],${low_a.5}[$k],
+						${low_a.6}[$k],${low_a.7}[$k],$x_adj);
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = sine_model(${low_a.0}[$k],${low_a.1}[$k],${low_a.2}[$k],
+					${low_a.3}[$k],${low_a.4}[$k],${low_a.5}[$k],
+						${low_a.6}[$k],${low_a.7}[$k],$x_adj);
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+
+		$x_adj = 0;
+		$y_est = sine_model(${top_a.0}[$k],${top_a.1}[$k],${top_a.2}[$k],
+				${top_a.3}[$k],${top_a.4}[$k],${top_a.5}[$k],
+					${top_a.6}[$k],${top_a.7}[$k],$x_adj);
+
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = sine_model(${top_a.0}[$k],${top_a.1}[$k],${top_a.2}[$k],
+					${top_a.3}[$k],${top_a.4}[$k],${top_a.5}[$k],
+						${top_a.6}[$k],${top_a.7}[$k],$x_adj);
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+	}else{
+		pgmove($break_point[$k], ${low_a.0}[$k]);
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${low_a.$n}[$k] * power($x_adj, $n);
+			}
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+	
+		pgmove($break_point[$k], ${top_a.0}[$k]);
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${top_a.$n}[$k] * power($x_adj, $n);
+			}
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
 
 #
 #--- save in a different format for future use
 #
-	for($n = 0; $n <= $nterms; $n++){
+	}
+	$iterms = $nterms;
+	if($nterms =~ /e/i){
+		$iterms = 3;
+	}elsif($nterms =~ /s/i){
+		$iterms = 7;
+	}
+	for($n = 0; $n <= $iterms; $n++){
 		${p_min.$n.$k} = ${low_a.$n}[$k];
 		${p_max.$n.$k} = ${top_a.$n}[$k];
 	}
@@ -544,20 +633,51 @@ if($ltotal > 0){
 
 	$sumy_min = 0;
 	$sumy_max = 0;
+	$min_min  = 1e14;
+	$max_min  = 1e14;
 	for($j = 0; $j < $ltotal; $j++){
 		$sumy_min += $min[$j];
 		$sumy_max += $max[$j];
+
+		if($min[$j] < $min_min){
+			$min_min = $min[$j];
+		}
+		if($max[$j] < $max_min){
+			$max_min = $max[$j];
+		}
 	}
-	$avgy_min        = $sumy_min/$ltotal;
-	$avgy_max        = $sumy_max/$ltotal;
-	${avg_min.$last} = $avgy_max;
+	$avgy_min = $sumy_min/$ltotal;
+	$avgy_max = $sumy_max/$ltotal;
+#
+#--- if the fit is exponential, we do not want any data to be <= 0
+#
+	if($nterms =~ /e/){
+
+		$bottom  = $min_min - $avgy_min;
+		if($bottom >= 0){
+			$avgy_min -= 1.1 * $bottom;
+		}else{
+			$avgy_min += 0.9 * $bottom;
+		}
+
+		$bottom  = $max_min - $avgy_max;
+		if($bottom >= 0){
+			$avgy_max -= 1.1 * $bottom;
+		}else{
+			$avgy_max += 0.9 * $bottom;
+		}
+	}
+
+	${avg_min.$last} = $avgy_min;
 	${avg_max.$last} = $avgy_max;
+
 
 	@adj_y_min = ();
 	@adj_y_max = ();
 	for($j = 0; $j <$ltotal ; $j++){
 		$y_temp = $min[$j] - $avgy_min;
 		push(@adj_y_min, $y_temp);
+
 		$y_temp = $max[$j] - $avgy_max;
 		push(@adj_y_max, $y_temp);
 	}
@@ -570,29 +690,96 @@ if($ltotal > 0){
 #--- lower envelope
 #
 		
-	@x_in   = @adj_x;
-	@y_in   = @adj_y_min;
-	$npts   = $ltotal;
-	$mode   = 0;
+	if($nterms =~ /e/i){
+		@x_in = @adj_x;
+		@y_in = @adj_y_min;
+		$ctot = $ltotal;
 
-	svdfit($npts, $nterms);
+		change_to_log_and_fit();	#--- this change data into log, and fit a straight line
 
-	for($n = 0; $n <= $nterms; $n++){
-		${p_min.$n}       = $a[$n];
-		${p_min.$n.$last} = $a[$n];
+		for($n = 0; $n <= 2; $n++){
+			${p_min.$n}       = $a[$n];
+			${p_min.$n.$last} = $a[$n];
+		}
+	}elsif($nterms =~ /s/i){
+		@input_x = @adj_x;
+		@input_y = @adj_y_min;
+		$input_total = $ltotal;
+
+		find_sine_curve();
+
+		${p_min.0} = $s_int;
+		${p_min.1} = $s_slope;
+		${p_min.2} = $ea0;
+		${p_min.3} = $ea1;
+		${p_min.4} = $ea2;
+		${p_min.5} = $s_amp; 
+		${p_min.6} = $s_frq;
+		${p_min.7} = $s_sht;
+
+		for($n = 0; $n < 8; $n++){
+			${p_min.$n.$last} = ${p_min.$n};
+		}
+	}else{
+		@x_in = @adj_x;
+		@y_in = @adj_y_min;
+		$npts = $ltotal;
+		$mode = 0;
+
+		svdfit($npts, $nterms);
+	
+		for($n = 0; $n <= $nterms; $n++){
+			${p_min.$n}       = $a[$n];
+			${p_min.$n.$last} = $a[$n];
+		}
 	}
 
 #
 #---- upper envelope
 #
+		
+	if($nterms =~ /e/i){
+		@x_in = @adj_x;
+		@y_in = @adj_y_max;
+		$ctot = $ltotal;
 
-	@y_in   = @adj_y_max;
+		change_to_log_and_fit();
+	
+		for($n = 0; $n <= 2; $n++){
+			${p_max.$n}       = $a[$n];
+			${p_max.$n.$last} = $a[$n];
+		}
+	}elsif($nterms =~ /s/i){
+		@input_x = @adj_x;
+		@input_y = @adj_y_max;
+		$input_total = $ltotal;
 
-	svdfit($npts, $nterms);
+		find_sine_curve();
 
-	for($n = 0; $n <= $nterms; $n++){
-		${p_max.$n}       = $a[$n];
-		${p_max.$n.$last} = $a[$n];
+		${p_max.0} = $s_int;
+		${p_max.1} = $s_slope;
+		${p_max.2} = $ea0;
+		${p_max.3} = $ea1;
+		${p_max.4} = $ea2;
+		${p_max.5} = $s_amp; 
+		${p_max.6} = $s_frq;
+		${p_max.7} = $s_sht;
+
+		for($n = 0; $n < 8; $n++){
+			${p_max.$n.$last} = ${p_max.$n};
+		}
+	}else{
+		@x_in = @adj_x;
+		@y_in = @adj_y_max;
+		$npts = $ltotal;
+		$mode = 0;
+
+		svdfit($npts, $nterms);
+
+		for($n = 0; $n <= $nterms; $n++){
+			${p_max.$n}       = $a[$n];
+			${p_max.$n.$last} = $a[$n];
+		}
 	}
 
 #
@@ -605,18 +792,41 @@ if($ltotal > 0){
 	$sum_max2 = 0;
 	for($j = 0; $j < $ltotal ; $j++){
 		
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+		if($nterms =~ /e/i){
+			for($n = 0; $n < 3; $n++){
+				$a[$n] = ${p_min.$n};
+			}
+			$y_est = exp_func($adj_x[$j]);
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+					${p_min.3},${p_min.4},${p_min.5},
+						${p_min.6},${p_min.7},$adj_x[$j]);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+			}
 		}
-		$diff = $adj_y_min[$j]  - $y_est;
+
+		$diff = $adj_y_min[$j] - $y_est;
 
 		$sum_min  += $diff;
 		$sum_min2 += $diff * $diff;
 		
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+		if($nterms =~ /e/i){
+			for($n = 0; $n < 3; $n++){
+				$a[$n] = ${p_max.$n};
+			}
+			$y_est = exp_func($adj_x[$j]);
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+					${p_max.3},${p_max.4},${p_max.5},
+						${p_max.6},${p_max.7},$adj_x[$j]);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+			}
 		}
 		$diff = $adj_y_max[$j]  - $y_est;
 
@@ -644,12 +854,22 @@ if($ltotal > 0){
 	$npts = 0;
 	for($j = 0; $j < $ltotal; $j++){
 
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+		if($nterms =~ /e/i){
+			for($n = 0; $n < 3; $n++){
+				$a[$n] = ${p_min.$n};
+			}
+			$y_est = exp_func($adj_x[$j]);
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+					${p_min.3},${p_min.4},${p_min.5},
+						${p_min.6},${p_min.7},$adj_x[$j]);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+			}
 		}
 		$plim  = $y_est  - $out_range * $pmin_sig;
-
 		if($adj_y_min[$j] <  $plim){
 			push(@x_in, $adj_x[$j]);
 			push(@y_in, $adj_y_min[$j]);
@@ -658,14 +878,50 @@ if($ltotal > 0){
 	}
 
 #
+#--- for sine fit, if the data are large, we drop more data point, but if the data are small
+#--- we use the first round fitting results and skip the second round fitting.
+#--- c_ratio is used to descriminate whether we should drop the second round
+#
+	$c_ratio = $npts/$ltotal;
+
+#
 #---- if the numbers of selected data points are too small, use the original estimates
 #
 	if($npts > 10){
-		svdfit($npts, $nterms);
+		if($nterms =~ /e/i){
+			$ctot = $npts;
 
-		for($n = 0; $n <= $nterms; $n++){
-			${p_min.$n}       = $a[$n];
-			${p_min.$n.$last} = $a[$n];
+			change_to_log_and_fit();
+
+			for($n = 0; $n <= 2; $n++){
+				${p_min.$n}       = $a[$n];
+				${p_min.$n.$last} = $a[$n];
+			}
+		}elsif($nterms =~ /s/i && $c_ratio > 0.3){
+			@input_x     = @x_in;
+			@input_y     = @y_in;
+			$input_total = $npts;
+	
+			find_sine_curve();
+	
+			${p_min.0} = $s_int;
+			${p_min.1} = $s_slope;
+			${p_min.2} = $ea0;
+			${p_min.3} = $ea1;
+			${p_min.4} = $ea2;
+			${p_min.5} = $s_amp; 
+			${p_min.6} = $s_frq;
+			${p_min.7} = $s_sht;
+			for($n = 0; $n < 8; $n++){
+				${p_min.$n.$last} = ${p_min.$n};
+			}
+		}else{
+			svdfit($npts, $nterms);
+
+			for($n = 0; $n <= $nterms; $n++){
+				${p_min.$n}       = $a[$n];
+				${p_min.$n.$last} = $a[$n];
+			}
 		}
 	}
 #
@@ -675,9 +931,20 @@ if($ltotal > 0){
 	@y_in = ();
 	$npts = 0;
 	for($j = 0; $j < $ltotal; $j++){
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+		if($nterms =~ /e/i){
+			for($n = 0; $n < 3; $n++){
+				$a[$n] = ${p_max.$n};
+			}
+			$y_est = exp_func($adj_x[$j]);
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+					${p_max.3},${p_max.4},${p_max.5},
+						${p_max.6},${p_max.7},$adj_x[$j]);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+			}
 		}
 		$plim  = $y_est  + $out_range * $pmax_sig;
 
@@ -689,11 +956,40 @@ if($ltotal > 0){
 	}
 
 	if($npts > 10){
-		svdfit($npts, $nterms);
+		if($nterms =~ /e/i){
+			$ctot = $npts;
+			change_to_log_and_fit();
 
-		for($n = 0; $n <= $nterms; $n++){
-			${p_max.$n}    = $a[$n];
-			${p_max.$n.$last} = $a[$n];
+			for($n = 0; $n <= 2; $n++){
+				${p_max.$n}       = $a[$n];
+				${p_max.$n.$last} = $a[$n];
+			}
+		}elsif($nterms =~ /s/i){
+			@input_x     = @x_in;
+			@input_y     = @y_in;
+			$input_total = $npts;
+	
+			find_sine_curve();
+	
+			${p_max.0} = $s_int;
+			${p_max.1} = $s_slope;
+			${p_max.2} = $ea0;
+			${p_max.3} = $ea1;
+			${p_max.4} = $ea2;
+			${p_max.5} = $s_amp; 
+			${p_max.6} = $s_frq;
+			${p_max.7} = $s_sht;
+
+			for($n = 0; $n < 8; $n++){
+				${p_max.$n.$last} = ${p_max.$n};
+			}
+		}else{
+			svdfit($npts, $nterms);
+
+			for($n = 0; $n <= $nterms; $n++){
+				${p_max.$n}       = $a[$n];
+				${p_max.$n.$last} = $a[$n];
+			}
 		}
 	}
 
@@ -706,19 +1002,42 @@ if($ltotal > 0){
 	$sum_max  = 0;
 	$sum_max2 = 0;
 	for($j = 0; $j < $ltotal; $j++){
-		
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+
+		if($nterms =~ /e/i){
+			for($n = 0; $n < 3; $n++){
+				$a[$n] = ${p_min.$n};
+			}
+			$y_est = exp_func($adj_x[$j]);
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+						${p_min.3},${p_min.4},${p_min.5},
+							${p_min.6},${p_min.7},$adj_x[$j]);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+			}
 		}
-		$diff = $adj_y_min[$j] - $y_est;
+
+		$diff = $adj_y_min[$j]  - $y_est;
 
 		$sum_min  += $diff;
 		$sum_min2 += $diff * $diff;
 
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+		if($nterms =~ /e/i){
+			for($n = 0; $n < 3; $n++){
+				$a[$n] = ${p_max.$n};
+			}
+			$y_est = exp_func($adj_x[$j]);
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+						${p_max.3},${p_max.4},${p_max.5},
+							${p_max.6},${p_max.7},$adj_x[$j]);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+			}
 		}
 		$diff = $adj_y_max[$j] - $y_est;
 
@@ -737,45 +1056,134 @@ if($ltotal > 0){
 
 	pgsci(4);
 	$x_range = $break_point[$last+1] - $break_point[$last];
-	$step = $x_range/100;
+	$step    = $x_range/100;
 
-	$m = 0;
-	${p_min.$m}       += $avgy_min;
-	${p_min.$m.$last} += $avgy_min;
-	$y_est             = ${p_min.0}  - $widen * $pmin_sig;
-	pgmove($break_point[$last], $y_est);
-	for($j = 1; $j < 100; $j++){
-		$x_adj = $step * $j;
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_min.$n} * power($x_adj, $n);
+	if($nterms =~ /e/i){
+		$m = 0;
+		${p_min.$m}       += $avgy_min;
+		${p_min.$m.$last} += $avgy_min;
+		$x_adj = 0.0;
+		for($n = 0; $n < 3; $n++){
+			$a[$n]  = ${p_min.$n.$last};
 		}
-		$y_est = $y_est - $widen * $pmin_sig;
-		$x_est = $x_adj + $break_point[$last];
+		$y_est = exp_func($x_adj) + ${p_min.$m};
 
-		pgdraw($x_est, $y_est);
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = exp_func($x_adj) + ${p_min.$m};
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+
+	}elsif($nterms =~ /s/i){
+#
+#--- sine + exp + linear case
+#
+		$m = 0;
+		${p_min.$m}       += $avgy_min;
+		${p_min.$m.$last} += $avgy_min;
+		$x_adj = 0;
+		$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+					${p_min.3},${p_min.4},${p_min.5},
+						${p_min.6},${p_min.7},$x_adj);
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+					${p_min.3},${p_min.4},${p_min.5},
+						${p_min.6},${p_min.7},$x_adj);
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+        }else{
+		$m = 0;
+		${p_min.$m}       += $avgy_min;
+		${p_min.$m.$last} += $avgy_min;
+		$y_est             = ${p_min.0}  - $widen * $pmin_sig;
+		pgmove($break_point[$last], $y_est);
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_min.$n} * power($x_adj, $n);
+			}
+			$y_est = $y_est - $widen * $pmin_sig;
+			$x_est = $x_adj + $break_point[$last];
+	
+			pgdraw($x_est, $y_est);
+		}
 	}
 
 #
 #--- plot the upper envelope
 #
 
-	${p_max.$m}       += $avgy_max;
-	${p_max.$m.$last} += $avgy_max;
-	$y_est             = ${p_max.0}  + $widen * $pmax_sig;
-	pgmove($break_point[$last], $y_est);
-	for($j = 1; $j < 100; $j++){
-		$x_adj = $step * $j;
-		$y_est  = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${p_max.$n} * power($x_adj, $n);
+	if($nterms =~ /e/i){
+		$x_adj = 0.0;
+		$m     = 0;
+		${p_max.$m}       += $avgy_max;
+		${p_max.$m.$last} += $avgy_max;
+		for($n = 0; $n < 3; $n++){
+			$a[$n]  = ${p_max.$n.$last};
 		}
-		$y_est = $y_est + $widen * $pmax_sig;
-		$x_est = $x_adj + $break_point[$last];
+		$y_est = exp_func($x_adj) + ${p_max.$m};
 
-		pgdraw($x_est, $y_est);
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = exp_func($x_adj) + ${p_max.$m} ;
+			$x_est = $x_adj + $break_point[$k];
+			pgdraw($x_est, $y_est);
+		}
+
+	}elsif($nterms =~ /s/i){
+#
+#--- sine + exp + linear case
+#
+		$x_adj = 0;
+		$m     = 0;
+		${p_max.$m}       += $avgy_max;
+		${p_max.$m.$last} += $avgy_max;
+		$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+					${p_max.3},${p_max.4},${p_max.5},
+						${p_max.6},${p_max.7},$x_adj);
+
+		pgmove($break_point[$k], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+						${p_max.3},${p_max.4},${p_max.5},
+							${p_max.6},${p_max.7},$x_adj);
+			$x_est = $x_adj + $break_point[$k];
+
+			pgdraw($x_est, $y_est);
+		}
+
+        }else{
+		${p_max.$m}       += $avgy_max;
+		${p_max.$m.$last} += $avgy_max;
+		$y_est             = ${p_max.0}  + $widen * $pmax_sig;
+
+		pgmove($break_point[$last], $y_est);
+
+		for($j = 1; $j < 100; $j++){
+			$x_adj = $step * $j;
+			$y_est  = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${p_max.$n} * power($x_adj, $n);
+			}
+			$y_est = $y_est + $widen * $pmax_sig;
+			$x_est = $x_adj + $break_point[$last];
+	
+			pgdraw($x_est, $y_est);
+		}
+		pgsci(1);
 	}
-	pgsci(1);
 }
 
 pgsci(1);
@@ -789,21 +1197,35 @@ pgsci(1);
 $bot_excess = '';
 $x_adj      = $xmax + 10 - $break_point[$last];
 
-$y_est = 0;
-for($n = 0; $n <= $nterms; $n++){
-	$y_est += ${p_min.$n.$last} * power($x_adj, $n);
-}
-$y_est = $y_est - $widen * $pmin_sig;
-
-$chk   = 0;
-if($y_est < $bot){
-	$limit = $bot;
-	$nv = 0;
-	${a.$nv}   = ${p_min.$nv.$last}- $widen * $pmin_sig;
+if($nterms =~ /e/i){
+	for($n = 0; $n < 3; $n++){
+		$a[$n]  = ${p_min.$n.$last};
+	}
+	$y_est = exp_func($x_adj) + $a[0];
+}elsif($nterms =~ /s/i){
+	$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+				${p_min.3},${p_min.4},${p_min.5},
+					${p_min.6},${p_min.7},$x_adj);
+	for($m = 0; $m < 8; $m++){
+		$a[$m] = ${p_min.$m}
+	}
+}else{
+	$y_est = 0;
+	for($n = 0; $n <= $nterms; $n++){
+		$y_est += ${p_min.$n.$last} * power($x_adj, $n);
+	}
+	$y_est = $y_est - $widen * $pmin_sig;
 	for($n = 1; $n <= $nterms; $n++){
 		${a.$n}    = ${p_min.$n.$last};
 	}
-	$ind       = -1;
+}
+
+$chk   = 0;
+if($y_est < $bot){
+	$limit    = $bot;
+	$nv       = 0;
+	${a.$nv} -= $widen * $pmin_sig;
+	$ind      = -1;
 
 	find_cross_point();
 
@@ -839,20 +1261,34 @@ if($y_est < $bot){
 $top_excess = '';
 $x_adj      = $xmax + 10 - $break_point[$last];
 
-$y_est = 0;
-for($n = 0; $n <= $nterms; $n++){
-	$y_est += ${p_max.$n.$last} * power($x_adj, $n);
-}
-$y_est = $y_est +  $widen * $pmax_sig;
-
-if($y_est > $top){
-	$limit = $top;
-	$nv = 0;
-	${a.$nv}   = ${p_max.$nv.$last}- $widen * $pmax_sig;
+if($nterms =~ /e/i){
+	for($n = 0; $n < 3; $n++){
+		$a[$n]  = ${p_max.$n.$last};
+	}
+	$y_est = exp_func($x_adj) + $a[0];
+}elsif($nterms =~ /s/i){
+	$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+				${p_max.3},${p_max.4},${p_max.5},
+						${p_max.6},${p_max.7},$x_adj);
+	for($m = 0; $m < 8; $m++){
+		$a[$m] = ${p_max.$m}
+	}
+}else{
+	$y_est = 0;
+	for($n = 0; $n <= $nterms; $n++){
+		$y_est += ${p_max.$n.$last} * power($x_adj, $n);
+	}
+	$y_est = $y_est +  $widen * $pmax_sig;
 	for($n = 1; $n <= $nterms; $n++){
 		${a.$n}    = ${p_max.$n.$last};
 	}
-	$ind   = 1;
+}
+
+if($y_est > $top){
+	$limit      = $top;
+	$nv         = 0;
+	${a.$nv}   -= $widen * $pmax_sig;
+	$ind        = 1;
 
 	find_cross_point();
 
@@ -947,17 +1383,41 @@ if($fits =~ /hrc/i){
 }
 
 print OUT "Fitting Reuslts for $msid\n\n";
+
 if($special_mark == 1){
 	print OUT2 "$hrc_mark.$col<>";
 }else{
 	print OUT2 "$col<>";
 }
 
+$iterms = $nterms;
+if($nterms =~ /e/i){
+	$iterms = 3;
+}elsif($nterms =~ /s/i){
+	$iterms = 7;
+}
+
 for($k = 0; $k < $num_break; $k++){
-	print OUT "\tIntercept @ $start_point\t";
-	print OUT "x\t\t";
-	for($n = 2; $n < $nterms; $n++){
-        	print OUT 'x**'."$n\t\t";
+	if($nterms =~ /e/i){
+		print OUT "\tc\t";
+		print OUT "a \t";
+		print OUT "b \t(a *exp[b * x]) + c\t";
+	}elsif($nterms =~ /s/i){
+		print OUT "\ta \t";
+		print OUT "b \t";
+		print OUT "c \t";
+		print OUT "d \t";
+		print OUT "e \t";
+		print OUT "f \t";
+		print OUT "g \t";
+		print OUT "h \t";
+		print OUT "(a + b*x) + (c + d*exp(e*x)) + f*sin(g*x - h)\t";
+	}else{
+		print OUT "\tIntercept @ $start_point\t";
+		print OUT "x\t\t";
+		for($n = 2; $n <= $iterms; $n++){
+        		print OUT 'x**'."$n\t\t";
+		}
 	}
 	print OUT "\n";
 	print OUT "lower:\t";
@@ -968,7 +1428,7 @@ for($k = 0; $k < $num_break; $k++){
 	$bp_short = sprintf "%5.4f", $break_point[$k];
 	print OUT2 "$bp_short".'=l='."$intercept";
 
-	for($n = 1; $n < $nterms; $n++){
+	for($n = 1; $n <= $iterms; $n++){
         	print OUT  "${p_min.$n.$k}\t";
 		print OUT2 ":${p_min.$n.$k}";
 	}
@@ -980,7 +1440,7 @@ for($k = 0; $k < $num_break; $k++){
 	$intercept = ${p_max.$nv.$k};
 	print OUT  "$intercept\t";
 	print OUT2 "$intercept";
-	for($n = 1; $n < $nterms; $n++){
+	for($n = 1; $n <= $iterms; $n++){
         	print OUT  "${p_max.$n.$k}\t";
 		print OUT2 ":${p_max.$n.$k}";
 	}
@@ -992,11 +1452,11 @@ for($k = 0; $k < $num_break; $k++){
 
 for($k = $num_break; $k < 8; $k++){
 	print OUT2 "=l=";
-	for($n = 0; $n < $nterms; $n++){
+	for($n = 0; $n <= $iterms; $n++){
 		print OUT2 ":";
 	}
 	print OUT2 "=u=";
-	for($n = 0; $n < $nterms; $n++){
+	for($n = 0; $n <= $iterms; $n++){
 		print OUT2 ":";
 	}
 	print OUT2 "<>";
@@ -1147,40 +1607,119 @@ if($lim_s =~ /both/i){
 	for($k = 0; $k < $num_break; $k++){
 		$x_range = $break_point[$k+1] - $break_point[$k];
 		$step    = $x_range/100;
-		$n       = 0;
-		$y_est   = ${p_min.$n.$k}  - $widen * $pmin_sig;
-
-		pgmove($break_point[$k], $y_est);
-
-		for($j = 1; $j < 100; $j++){
-			$x_adj = $step * $j;
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_min.$n.$k} * power($x_adj, $n);
-			}
-			$y_est = $y_est - $widen * $pmin_sig;
-			$x_est = $x_adj + $break_point[$k];
-			pgdraw($x_est, $y_est);
-		}
-	}
+       	 	if($nterms =~ /e/i){
+#
+#--- exponential fit case
+#
+       	         	$x_adj = 0;
+       	         	for($n = 0; $n < 3; $n++){
+       	                 	$a[$n] = ${p_min.$n.$k};
+       	         	}
+       	         	$y_est = exp_func($x_adj) + $a[0];
+		
+       	         	pgmove($break_point[$k], $y_est);
+		
+       	         	for($j = 1; $j < 100; $j++){
+       	                 	$x_adj = $step * $j;
+       	                 	$y_est = exp_func($x_adj) + $a[0];
+       	                 	$x_est = $x_adj + $break_point[$k];
+       	                 	pgdraw($x_est, $y_est);
+       	         	}
+		
+       	         	$x_adj = 0;
+       	         	for($n = 0; $n < 3; $n++){
+       	                 	$a[$n] = ${p_max.$n.$k};
+       	         	}
+       	         	$y_est = exp_func($x_adj) + $a[0];
+		
+       	         	pgmove($break_point[$k], $y_est);
+		
+       	         	for($j = 1; $j < 100; $j++){
+       	                 	$x_adj = $step * $j;
+       	                 	$y_est = exp_func($x_adj) + $a[0];
+       	                 	$x_est = $x_adj + $break_point[$k];
+       	                 	pgdraw($x_est, $y_est);
+       	         	}
+       	 	}elsif($nterms =~ /s/i){
+#
+#--- sine + exp + linear case
+#
+       	         	$x_adj = 0;
+       	         	for($n = 0; $n < 6; $n++){
+       	                 	${p_min.$n} = ${p_min.$n.$k};
+       	         	}
+			$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+						${p_min.3},${p_min.4},${p_min.5},
+							${p_min.6},${p_min.7},$x_adj);	
+       	         	pgmove($break_point[$k], $y_est);
+		
+       	         	for($j = 1; $j < 100; $j++){
+       	                 	$x_adj = $step * $j;
+				$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+							${p_min.3},${p_min.4},${p_min.5},
+								${p_min.6},${p_min.7},$x_adj);	
+       	                 	$x_est = $x_adj + $break_point[$k];
+       	                 	pgdraw($x_est, $y_est);
+       	         	}
+		
+       	         	$x_adj = 0;
+       	         	for($n = 0; $n < 6; $n++){
+       	                 	${p_max.$n} = ${p_max.$n.$k};
+       	         	}
+			$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+						${p_max.3},${p_max.4},${p_max.5},
+							${p_max.6},${p_max.7},$x_adj);	
+		
+       	         	pgmove($break_point[$k], $y_est);
+		
+       	         	for($j = 1; $j < 100; $j++){
+       	                 	$x_adj = $step * $j;
+				$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+							${p_max.3},${p_max.4},${p_max.5},
+								${p_max.6},${p_max.7},$x_adj);	
+       	                 	$x_est = $x_adj + $break_point[$k];
+       	                 	pgdraw($x_est, $y_est);
+       	         	}
+       	 	}else{
+       	         	pgmove($break_point[$k], ${p_min.$n.$k});
+       	         	for($j = 1; $j < 100; $j++){
+       	                 	$x_adj = $step * $j;
+       	                 	$y_est = 0;
+       	                 	for($n = 0; $n <= $nterms; $n++){
+       	                         	$y_est += ${p_min.$n.$k} * power($x_adj, $n);
+       	                 	}
+       	                 	$x_est = $x_adj + $break_point[$k];
+       	                 	pgdraw($x_est, $y_est);
+       	         	}
+		
+		
+       	         	pgmove($break_point[$k], ${top_a.0}[$k]);
+       	         	for($j = 1; $j < 100; $j++){
+       	                 	$x_adj = $step * $j;
+       	                 	$y_est = 0;
+       	                 	for($n = 0; $n <= $nterms; $n++){
+       	                         	$y_est += ${p_min.$n.$k} * power($x_adj, $n);
+       	                 	}
+       	                 	$x_est = $x_adj + $break_point[$k];
+       	                 	pgdraw($x_est, $y_est);
+       	         	}
+		
+		
+			$n       = 0;
+			$y_est   = ${p_min.$n.$k}  - $widen * $pmin_sig;
+		
+			pgmove($break_point[$k], $y_est);
 	
-	for($k = 0; $k < $num_break; $k++){
-		$x_range = $break_point[$k+1] - $break_point[$k];
-		$step    = $x_range/100;
-		$n       = 0;
-		$y_est   = ${p_max.$n.$k}  + $widen * $pmax_sig;
-
-		pgmove($break_point[$k], $y_est);
-
-		for($j = 1; $j < 100; $j++){
-			$x_adj = $step * $j;
-			$y_est = 0;
-			for($n = 0; $n <= $nterms; $n++){
-				$y_est += ${p_max.$n.$k} * power($x_adj, $n);
+			for($j = 1; $j < 100; $j++){
+				$x_adj = $step * $j;
+				$y_est = 0;
+				for($n = 0; $n <= $nterms; $n++){
+					$y_est += ${p_min.$n.$k} * power($x_adj, $n);
+				}
+				$y_est = $y_est - $widen * $pmin_sig;
+				$x_est = $x_adj + $break_point[$k];
+				pgdraw($x_est, $y_est);
 			}
-			$y_est = $y_est + $widen * $pmax_sig;
-			$x_est = $x_adj + $break_point[$k];
-			pgdraw($x_est, $y_est);
 		}
 	}
 	
@@ -1189,33 +1728,47 @@ if($lim_s =~ /both/i){
 	
 
 #
-#--- check whether the lower limt will be violated in near future
+#--- check whether the lower limit will be violated in near future
 #
 
 	if($range =~ /f/i){
 	 	$last	= $num_break -1;
 	 	$bot_excess = '';
 	 	$x_adj      = $xmax + 10 - $break_point[$last];
-	
-	 	$y_est = 0;
-	 	for($n = 0; $n <= $nterms; $n++){
-		  	$y_est += ${p_min.$n.$last} * power($x_adj, $n);
-	 	}
-	 	$y_est = $y_est - $widen * $pmin_sig + $avgy_min;
-	
-	 	$chk   = 0;
-	 	if($y_est < $bot){
-		  	$limit = $bot;
-		  	$nv = 0;
-		  	${a.$nv}   = ${p_min.$nv.$last}- $widen * $pmin_sig + $avgy_min;
+		if($nterms =~ /e/i){
+        		for($n = 0; $n < 3; $n++){
+                		$a[$n]  = ${p_min.$n.$last};
+        		}
+        		$y_est = exp_func($x_adj) + $a[0];
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+						${p_min.3},${p_min.4},${p_min.5},
+								${p_min.6},${p_min.7},$x_adj);	
+			for($m = 0; $m < 8; $m++){
+				$a[$m] = ${p_min.$m}
+			}
+		}else{
+			$y_est = 0;
+	 		for($n = 0; $n <= $nterms; $n++){
+		  		$y_est += ${p_min.$n.$last} * power($x_adj, $n);
+	 		}
+	 		$y_est = $y_est - $widen * $pmin_sig + $avgy_min;
+
 		  	for($n = 1; $n <= $nterms; $n++){
 			   	${a.$n}    = ${p_min.$n.$last};
 		  	}
-		  	$ind	= -1;
+		}
+	
+	 	$chk   = 0;
+	 	if($y_est < $bot){
+		  	$limit    = $bot;
+		  	$nv       = 0;
+		  	${a.$nv} -= $widen * $pmin_sig + $avgy_min;
+		  	$ind	  = -1;
 	
 		  	find_cross_point();
 	
-		  	$x_pos += $break_point[$last];
+		  	$x_pos   += $break_point[$last];
 	
 		  	$bot_excess = sprintf "%5.1f", $x_pos;
 		  	if($bot_excess <= $today){
@@ -1246,21 +1799,37 @@ if($lim_s =~ /both/i){
 
 	 	$top_excess = '';
 	 	$x_adj      = $xmax + 10 - $break_point[$last];
-	
-	 	$y_est = 0;
-	 	for($n = 0; $n <= $nterms; $n++){
-		  	$y_est += ${p_max.$n.$last} * power($x_adj, $n);
-	 	}
-	 	$y_est = $y_est +  $widen * $pmax_sig + $avgy_max;
-	
-	 	if($y_est > $top){
-		  	$limit = $top;
-		  	$nv = 0;
-		  	${a.$nv}   = ${p_max.$nv.$last}- $widen * $pmax_sig + $avgy_max;
+
+		if($nterms =~ /e/i){
+        		for($n = 0; $n < 3; $n++){
+                		$a[$n]  = ${p_max.$n.$last};
+        		}
+        		$y_est = exp_func($x_adj) + $a[0];
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+						${p_max.3},${p_max.4},${p_max.5},
+							${p_max.6},${p_max.7},$x_adj);	
+			for($m = 0; $m < 8; $m++){
+				$a[$m] = ${p_max.$m}
+			}
+		}else{
+			$y_est = 0;
+        		for($n = 0; $n <= $nterms; $n++){
+                		$y_est += ${p_max.$n.$last} * power($x_adj, $n);
+        		}
+        		$y_est = $y_est +  $widen * $pmax_sig;
+
 		  	for($n = 1; $n <= $nterms; $n++){
 			   	${a.$n}    = ${p_max.$n.$last};
 		  	}
-		  	$ind   = 1;
+		}
+
+	 	if($y_est > $top){
+		  	$limit    = $top;
+		  	$nv       = 0;
+		  	${a.$nv} -= $widen * $pmax_sig + $avgy_max;
+
+		  	$ind      = 1;
 	
 		  	find_cross_point();
 	
@@ -1348,12 +1917,35 @@ if($lim_s =~ /both/i){
 	}else{
 		print OUT2 "$col<>";
 	}
+
+	$iterms = $nterms;
+	if($nterms =~ /e/i){
+        	$iterms = 3;
+	}elsif($nterms =~ /s/i){
+        	$iterms = 7;
+	}
 	
 	for($k = 0; $k < $num_break; $k++){
-		print OUT "\tIntercept @ $start_point\t";
-		print OUT "x\t\t";
-		for($n = 2; $n < $nterms; $n++){
-        		print OUT 'x**'."$n\t\t";
+        	if($nterms =~ /e/i){
+                	print OUT "\tc\t";
+                	print OUT "a \t";
+                	print OUT "b \t(a *exp[b * x]) + c\t";
+        	}elsif($nterms =~ /s/i){
+                	print OUT "\ta \t";
+                	print OUT "b \t";
+                	print OUT "c \t";
+                	print OUT "d \t";
+                	print OUT "e \t";
+                	print OUT "f \t";
+                	print OUT "g \t";
+                	print OUT "h \t";
+                	print OUT "(a + b*x) + (c + d*exp(e*x)) + f*sin(g*x - h)\t";
+		}else{
+			print OUT "\tIntercept @ $start_point\t";
+			print OUT "x\t\t";
+			for($n = 2; $n < $iterms; $n++){
+        			print OUT 'x**'."$n\t\t";
+			}
 		}
 		print OUT "\n";
 		print OUT "lower:\t";
@@ -1364,7 +1956,7 @@ if($lim_s =~ /both/i){
 		$bp_short = sprintf "%5.4f", $break_point[$k];
 		print OUT2 "$bp_short=l=$intercept";
 	
-		for($n = 1; $n <= $nterms; $n++){
+		for($n = 1; $n <= $iterms; $n++){
         		print OUT  "${p_min.$n.$k}\t";
 			print OUT2 ":${p_min.$n.$k}";
 		}
@@ -1376,7 +1968,7 @@ if($lim_s =~ /both/i){
 		$intercept = ${p_max.$nv.$k};
 		print OUT  "$intercept\t";
 		print OUT2 "$intercept";
-		for($n = 1; $n <= $nterms; $n++){
+		for($n = 1; $n <= $iterms; $n++){
         		print OUT  "${p_max.$n.$k}\t";
 			print OUT2 ":${p_max.$n.$k}";
 		}
@@ -1388,11 +1980,11 @@ if($lim_s =~ /both/i){
 	
 	for($k = $num_break; $k < 8; $k++){
 		print OUT2 "=l=";
-		for($n = 0; $n < $nterms; $n++){
+		for($n = 0; $n <= $iterms; $n++){
 			print OUT2 ":";
 		}
 		print OUT2 "=u=";
-		for($n = 0; $n < $nterms; $n++){
+		for($n = 0; $n <= $iterms; $n++){
 			print OUT2 ":";
 		}
 		print OUT2 "<>";
@@ -1454,34 +2046,58 @@ sub find_cross_point{
 	$step = 1/12;
 	if($ind > 0){
 		$x_est = $xmax - $break_point[$last];
-		$yest = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$yest += ${a.$n} * power($x_est, $n);
+		if($nterms =~ /e/i){
+			$y_est  = exp_func($x_est);
+			$y_est += $a[0];
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model($a[0],$a[1],$a[2],
+					$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${a.$n} * power($x_est, $n);
+			}
 		}
 		if($y_est <=  $limit){
 			OUTER:
 			for($m = 0; $m < 400; $m++){
 				$x_est = $xmax + $step * $m - $break_point[$last];
 
-				$y_est = 0;
-				for($n = 0; $n <= $nterms; $n++){
-					$y_est += ${a.$n} * power($x_est, $n);
+				if($nterms =~ /e/i){
+					$y_est  = exp_func($x_est);
+					$y_est += $a[0];
+				}elsif($nterms =~ /s/i){
+					$y_est = sine_model($a[0],$a[1],$a[2],
+							$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+				}else{
+					$y_est = 0;
+					for($n = 0; $n <= $nterms; $n++){
+						$y_est += ${a.$n} * power($x_est, $n);
+					}
 				}
 
 				if($y_est >= $limit){
-					$diff1  = $y_est  - $limit;
+					$diff1  = $y_est - $limit;
 					$x_est -= $step;
 
-					$_yest2 = 0;
-					for($n = 0; $n <= $nterms; $n++){
-						$y_est2 += ${a.$n} * power($x_est, $n);
+					if($nterms =~ /e/i){
+						$y_est2  = exp_func($x_est);
+						$y_est2 += $a[0];
+					}elsif($nterms =~ /s/i){
+						$y_est2 = sine_model($a[0],$a[1],$a[2],
+								$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+					}else{
+						$y_est2 = 0;
+						for($n = 0; $n <= $nterms; $n++){
+							$y_est2 += ${a.$n} * power($x_est, $n);
+						}
 					}
 
 					$diff2  = $limit - $y_est2;
 					$div    = $diff1 + $diff2;
 					$add    = 0;
 					if($div > 0){
-						$add    = $step * $diff2/($diff1 + $diff2);
+						$add = $step * $diff2/($diff1 + $diff2);
 					}
 					$x_pos  = $x_est + $add;
 		
@@ -1493,25 +2109,41 @@ sub find_cross_point{
 			for($m = 0; $m < 400; $m++){
 				$x_est = $xmax - $step * $m - $break_point[$last];
 
-				$y_est = 0;
-				for($n = 0; $n <= $nterms; $n++){
-					$y_est += ${a.$n} * power($x_est, $n);
+				if($nterms =~ /e/i){
+					$y_est  = exp_func($x_est);
+					$y_est += $a[0];
+				}elsif($nterms =~ /s/i){
+					$y_est = sine_model($a[0],$a[1],$a[2],
+							$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+				}else{
+					$y_est = 0;
+					for($n = 0; $n <= $nterms; $n++){
+						$y_est += ${a.$n} * power($x_est, $n);
+					}
 				}
 				
 				if($y_est <= $limit){
 					$diff1  = $limit - $y_est;
 					$x_est += $step;
 
-					$y_est2 = 0;
-					for($n = 0; $n <= $nterms; $n++){
-						$y_est2 += ${a.$n} * power($x_est, $n);
+					if($nterms =~ /e/i){
+						$y_est2   = exp_func($x_est);
+						$y_enst2 += $a[0];
+					}elsif($nterms =~ /s/i){
+						$y_est2 = sine_model($a[0],$a[1],$a[2],
+								$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+					}else{
+						$y_est2 = 0;
+						for($n = 0; $n <= $nterms; $n++){
+							$y_est2 += ${a.$n} * power($x_est, $n);
+						}
 					}
 
 					$diff2  = $y_est2 - $limit;
 					$div    = $diff1 + $diff2;
 					$add    = 0;
 					if($div > 0){
-						$add    = $step * $diff2/($diff1 + $diff2);
+						$add = $step * $diff2/($diff1 + $diff2);
 					}
 					$x_pos  = $x_est - $add;
 		
@@ -1522,33 +2154,56 @@ sub find_cross_point{
 	}else{
 		$x_est = $xmax - $break_point[$last];
 
-		$y_est = 0;
-		for($n = 0; $n <= $nterms; $n++){
-			$y_est += ${a.$n} * power($x_est, $n);
+		if($nterms =~ /e/i){
+			$y_est = exp_func($x_est);
+			$y_est += $a[0];
+		}elsif($nterms =~ /s/i){
+			$y_est = sine_model($a[0],$a[1],$a[2],
+					$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+		}else{
+			$y_est = 0;
+			for($n = 0; $n <= $nterms; $n++){
+				$y_est += ${a.$n} * power($x_est, $n);
+			}
 		}
 
 		if($y_est >=  $limit){
 			OUTER:
 			for($m = 0; $m < 400; $m++){
 				$x_est = $xmax + $step * $m - $break_point[$last];
-				$y_est = 0;
-				for($n = 0; $n <= $nterms; $n++){
-					$y_est += ${a.$n} * power($x_est, $n);
+				if($nterms =~ /e/i){
+					$y_est = exp_func($x_est);
+				}elsif($nterms =~ /s/i){
+					$y_est = sine_model($a[0],$a[1],$a[2],
+							$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+				}else{
+					$y_est = 0;
+					for($n = 0; $n <= $nterms; $n++){
+						$y_est += ${a.$n} * power($x_est, $n);
+					}
 				}
 
 				if($y_est <= $limit){
 					$diff1  = $limit - $y_est;
 					$x_est -= $step;
-					$y_est2 = 0;
-					for($n = 0; $n <= $nterms; $n++){
-						$y_est2 += ${a.$n} * power($x_est, $n);
+					if($nterms =~ /e/i){
+						$y_est2 = exp_func($x_est);
+						$y_est2 += $a[0];
+					}elsif($nterms =~ /s/i){
+						$y_est2 = sine_model($a[0],$a[1],$a[2],
+								$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+					}else{
+						$y_est2 = 0;
+						for($n = 0; $n <= $nterms; $n++){
+							$y_est2 += ${a.$n} * power($x_est, $n);
+						}
 					}
 
 					$diff2  = $y_est2 - $limit;
 					$div    = $diff1 + $diff2;
 					$add    = 0;
 					if($div > 0){
-						$add    = $step * $diff2/($diff1 + $diff2);
+						$add = $step * $diff2/($diff1 + $diff2);
 					}
 					$x_pos  = $x_est + $add;
 		
@@ -1560,27 +2215,43 @@ sub find_cross_point{
 			for($m = 0; $m < 400; $m++){
 				$x_est = $xmax - $step * $m - $break_point[$last];
 
-				$y_est = 0;
-				for($n = 0; $n <= $nterms; $n++){
-					$y_est += ${a.$n} * power($x_est, $n);
+				if($nterms =~ /e/i){
+					$y_est = exp_func($x_est);
+					$y_est+= $a[0];
+				}elsif($nterms =~ /s/i){
+					$y_est = sine_model($a[0],$a[1],$a[2],
+							$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+				}else{
+					$y_est = 0;
+					for($n = 0; $n <= $nterms; $n++){
+						$y_est += ${a.$n} * power($x_est, $n);
+					}
 				}
 
 				if($y_est >= $limit){
 					$diff1  = $y_est  - $limit;
 					$x_est += $step;
 
-					$y_est2 = 0;
-					for($n = 0; $n <= $nterms; $n++){
-						$y_est2 += ${a.$n} * power($x_est, $n);
+					if($nterms =~ /e/i){
+						$y_est2  = exp_func($x_est);
+						$y_est2 += $a[0];
+					}elsif($nterms =~ /s/i){
+						$y_est2 = sine_model($a[0],$a[1],$a[2],
+								$a[3],$a[4],$a[5],$a[6],$a[7],$x_est);
+					}else{
+						$y_est2 = 0;
+						for($n = 0; $n <= $nterms; $n++){
+							$y_est2 += ${a.$n} * power($x_est, $n);
+						}
 					}
 
-					$diff2  = $limit - $y_est2;
-					$div    = $diff1 + $diff2;
-					$add    = 0;
+					$diff2 = $limit - $y_est2;
+					$div   = $diff1 + $diff2;
+					$add   = 0;
 					if($div > 0){
 						$add    = $step * $diff2/($diff1 + $diff2);
 					}
-					$x_pos  = $x_est - $add;
+					$x_pos = $x_est - $add;
 		
 					last OUTER;
 				}
@@ -1588,7 +2259,6 @@ sub find_cross_point{
 		}
 	}
 }
-
 
 
 ########################################################################
@@ -2274,3 +2944,408 @@ sub find_ebar {
         $std = sqrt($sum2/100 - $avg * $avg);
 }
 
+
+####################################################################
+## gridls: grid serach least squares fit for a non linear function #
+####################################################################
+
+sub gridls {
+
+#######################################################################
+#
+#       this is grid search least-squares fit for non-linear fuction
+#       described in "Data Reduction and Error Analysis for the Physical
+#       Sciences".
+#       The function must be given (see the end of this file).
+#
+#       Input:  $xbin:  independent variable
+#               $ybin:  dependent variable
+#               $nterms:        # of coefficients to be fitted
+#               $total:         # of data points
+#               $a:             initial guess of the coefficients
+#                               this must not be "0"
+#
+#               calling format:  gridls($nterms, $total)
+#                       @xbin, @ybin, @a must be universal
+#
+#       Output: $a:             estimated coefficients
+#
+#######################################################################
+
+        my($nterms, $total,  $no, $test, $fn, $free);
+        my($i, $j, $k, $l, $m, $n);
+        my($chi1, $chi2, $chi3, $save, $cmax, $delta,@delta);
+
+        ($nterms, $total) = @_;
+
+        $rmin = 0;
+        $rmax = $total - 1;
+
+        OUTER:
+        for($j = 0; $j < $nterms ; $j++){
+#        for($j = 5; $j >= 0 ; $j--){
+                $deltaa[$j] = $a[$j]*0.05;
+if($j == 5){
+                $deltaa[$j] = $a[$j];
+}
+
+                $fn    = 0;
+                $chi1  = chi_fit();
+                $delta =  $deltaa[$j];
+
+                $a[$j] += $delta;
+                $chi2 = chi_fit();
+
+                if($chi1  < $chi2){
+                        $delta = -$delta;
+                        $a[$j] += $delta;
+                        chi_fit();
+                        $save = $chi1;
+                        $chi1 = $chi2;
+                        $chi2 = $save;
+                }elsif($chi1 == $chi2){
+                        $cmax = 1;
+                        while($chi1 == $chi2){
+                                $a[$j] += $delta;
+                                $chi2 = chi_fit();
+                                $cmax++;
+                                if($cmax > 100){
+                                        $ok = 100;
+                                        print "$cmax: $a[$j] $delta $chi1 $chi2 something wrong!\n";
+                                        last OUTER;
+                                        exit 1;
+                                }
+                        }
+                }
+
+                $no = 0;
+                $test = 0;
+                OUTER:
+                while($test < 200){
+
+                        $fn++;
+                        $test++;
+                        $a[$j] += $delta;
+#                        if($a[$j] <= 0){
+#                                $a[$j] = 10;
+#                                $no++;
+#                                last OUTER;
+#                        }
+                        $chi3 = chi_fit();
+                        if($test > 150){
+                                $a[$j] = -999;
+                                $no++;
+                                last OUTER;
+                        }
+                        if($chi2 >= $chi3) {
+                                $chi1= $chi2;
+                                $chi2= $chi3;
+                        }else{
+                                last OUTER;
+                        }
+                }
+
+                if($no == 0){
+                        $delta = $delta *(1.0/(1.0 + ($chi1-$chi2)/($chi3 - $chi2)) + 0.5);
+                        $a[$j] = $a[$j] - $delta;
+                        $free =  $rmax - $rmin - $nterms;
+                        $siga[$j] = $deltaa[$j] * sqrt(2.0/($free*($chi3-2.0*$chi2 + $chi1)));
+                }
+        }
+        $chisq = $sum;
+}
+
+
+####################################################################
+###  chi_fit: compute chi sq value                              ####
+####################################################################
+
+sub chi_fit{
+        $sum = 0;
+        $base = $rmax - $rmin;
+        if($base == 0){
+                $base = 20;             # 20 is totally abitrally chosen
+        }
+        for($i = $rmin; $i <= $rmax; $i++){
+                $val = $xbin[$i];
+                $y_est = sin_func($val);
+                $diff = ($ybin[$i] - $y_est)/$base;
+                $sum += $diff*$diff;
+        }
+        return $sum;
+}
+
+
+####################################################################
+### sin_func: function form to be fitted                         ###
+####################################################################
+
+sub sin_func{
+
+#
+#----- you need to difine a function here. coefficients are
+#----- a[0] ... a[$nterms], and data points are $xbin[$i], $ybin[$i]
+#----- this function is called by gridls
+#
+        my ($y_est, $x_val);
+        ($x_val) = @_;
+
+#############################################
+#       here is an example function form
+#       replace the following to any
+#       function from you need
+#-------------------------------------------
+#        if($a[2] == 0){
+#                $z = 0;
+#        }else{
+#                $z = ($x_val - $a[0])/$a[2];
+#        }
+#        $y_est = $a[1]* exp(-1.0*($z*$z)/2.0);
+#############################################
+
+###     $y_est = $a[0] + $a[1] * $x_val + $a[2] * sin($a[3] * ($x_val-2000) - $a[4]) * exp($a[5]* ($x_val - 2000));
+###     $y_est = ($a[0] + $a[1] * $x_val + $a[2] * sin($a[3] * ($x_val) - $a[4])) * exp($a[5]* ($x_val));
+        $y_est = $a[0] * sin($a[1] * ($x_val) - $a[2]);
+
+        return $y_est;
+}
+
+#########################################################################
+### change_to_log_and_fit: fitting routine for exp decay data         ###
+#########################################################################
+
+sub change_to_log_and_fit{
+#
+#--- save the original data
+#
+        @x_temp = @x_in;
+        @y_temp = @y_in;
+        $temp_cnt = $ctot;
+
+        @x_save = ();
+        @y_save = ();
+        $save_cnt = 0;
+#
+#--- take log and remove if the y value is 0
+#
+        for($j = 0; $j < $temp_cnt; $j++){
+                if($y_temp[$j] > 0){
+                        $x_save[$save_cnt] = $x_temp[$j];
+                        $y_save[$save_cnt] = log($y_temp[$j]);
+                        $save_cnt++;
+                }
+        }
+
+        $l_total  = $save_cnt;
+#
+#--- call the linear fit
+#
+        least_fit();
+
+        $a[1] = exp($int);
+        $a[2] = -1.0 * $slope;
+}
+
+##################################
+### least_fit: least fitting  ####
+##################################
+
+sub least_fit {
+        $lsum = 0;
+        $lsumx = 0;
+        $lsumy = 0;
+        $lsumxy = 0;
+        $lsumx2 = 0;
+        $lsumy2 = 0;
+
+        for($fit_i = 0; $fit_i < $l_total;$fit_i++) {
+                $lsum++;
+                $lsumx += $x_save[$fit_i];
+                $lsumy += $y_save[$fit_i];
+                $lsumx2+= $x_save[$fit_i]*$x_save[$fit_i];
+                $lsumy2+= $y_save[$fit_i]*$y_save[$fit_i];
+                $lsumxy+= $x_save[$fit_i]*$y_save[$fit_i];
+        }
+
+        $delta = $lsum*$lsumx2 - $lsumx*$lsumx;
+        $int   = ($lsumx2*$lsumy - $lsumx*$lsumxy)/$delta;
+        $slope = ($lsumxy*$lsum - $lsumx*$lsumy)/$delta;
+
+
+        $sum = 0;
+        @diff_list = ();
+        for($fit_i = 0; $fit_i < $l_total;$fit_i++) {
+                $diff = $y_save[$fit_i] - ($int + $slope*$x_save[$fit_i]);
+                push(@diff_list,$diff);
+                $sum += $diff;
+        }
+        $avg = $sum/$l_total;
+
+        $diff2 = 0;
+        for($fit_i = 0; $fit_i < $l_total;$fit_i++) {
+                $diff = $diff_list[$fit_i] - avg;
+                $diff2 += $diff*$diff;
+        }
+        $sig = sqrt($diff2/($l_total - 1));
+
+        $sig3 = 3.0*$sig;
+
+        @lx_data = ();
+        @ly_data  = ();
+        $cnt = 0;
+        for($fit_i = 0; $fit_i < $l_total;$fit_i++) {
+                if(abs($diff_list[$fit_i]) < $sig3) {
+                        push(@lx_data,$x_save[$fit_i]);
+                        push(@ly_data,$y_save[$fit_i]);
+                        $cnt++;
+                }
+        }
+
+        $lsum = 0;
+        $lsumx = 0;
+        $lsumy = 0;
+        $lsumxy = 0;
+        $lsumx2 = 0;
+        $lsumy2 = 0;
+        for($fit_i = 0; $fit_i < $cnt; $fit_i++) {
+                $lsum++;
+                $lsumx += $lx_data[$fit_i];
+                $lsumy += $ly_data[$fit_i];
+                $lsumx2+= $lx_data[$fit_i]*$lx_data[$fit_i];
+                $lsumy2+= $ly_data[$fit_i]*$ly_data[$fit_i];
+                $lsumxy+= $lx_data[$fit_i]*$ly_data[$fit_i];
+        }
+
+        $delta = $lsum*$lsumx2 - $lsumx*$lsumx;
+        $int   = ($lsumx2*$lsumy - $lsumx*$lsumxy)/$delta;
+        $slope = ($lsumxy*$lsum - $lsumx*$lsumy)/$delta;
+
+        $tot1 = $l_total - 1;
+        $variance = ($lsumy2 + $int*$int*$lsum + $slope*$slope*$lsumx2
+                        -2.0 *($int*$lsumy + $slope*$lsumxy - $int*$slope*$lsumx))/$tot1;
+        $sigm_slope = sqrt($variance*$lsum/$delta);
+}
+
+##################################################################################
+### exp_func: exponential function                                             ###
+##################################################################################
+
+sub exp_func{
+
+	my($x_adj, $y_est);
+	($x_adj) = @_;
+
+	$y_est = $a[1] * exp(-1.0 * $a[2] * $x_adj);
+	return($y_est);
+}
+
+##########################################################################################
+### find_sine_curve: find parameters for linear + exp + sine curve fitting on data     ###
+##########################################################################################
+
+sub find_sine_curve{
+
+#
+#--- first remove a linear relation
+#
+	@x_save  = @input_x;
+	@y_save  = @input_y;
+	$l_total = $input_total;
+	
+	least_fit();
+	
+	@y_mod1 = ();
+	for($i = 0; $i < $input_total; $i++){
+		$y_mod1[$i] = $input_y[$i] - $int - $slope * $input_x[$i];
+	}
+	$s_int   = $int;
+	$s_slope = $slope;
+	
+#
+#--- find out what is the smallest value to set offset for exp model
+#
+
+	@temp  = sort{$a<=>$b} @y_mod1;
+	$y_min = $temp[0];
+
+	if($y_min < 0){
+		$y_min *= 1.1;
+	}else{
+		$y_min *= 0.9;
+	}
+	
+#
+#--- shift data close to zero, but always above it (exp does not take negatvie)
+#
+	for($i = 0; $i < $input_total; $i++){
+		$y_mod2[$i] = $y_mod1[$i] - $y_min;
+	}
+	
+	@x_in = @input_x;
+	@y_in = @y_mod2;
+	$ctot = $input_total;
+	
+	change_to_log_and_fit();
+	
+	$ea0 = $y_min;
+	$ea1 = $a[1];
+	$ea2 = $a[2];
+
+#
+#---- now remove influence from exponential factor
+#
+	@y_mod2 = ();
+	for($i = 0; $i < $input_total; $i++){
+		$y_mod3[$i] = $y_mod1[$i] - exp_func($input_x[$i]) - $ea0;
+	}
+	
+#
+#--- finally fit sine corve of the data
+#
+	
+	$a[0] = 0.05;		#--- sine amplitude
+	$a[1] = 6.2;		#--- sine freq
+	$a[2] = 0.2;		#--- sine shift
+	
+	@xbin = @input_x;
+	@ybin = @y_mod3;
+	$ntot = $input_total;
+#
+#--- repeat fitting routine 20 times and choose the best fits
+#	
+	$save_csq = 1000;
+	for($m = 0; $m < 20; $m++){
+		gridls(3, $ntot);
+		if($chisq < $save_csq){
+			$s_amp = $a[0];
+			$s_frq = $a[1];
+			$s_sht = $a[2];
+			$save_csq = $chisq;
+		}
+	}
+}
+
+######################################################################################
+### sine_model: linear+exp+sine model fitting                                     ####
+######################################################################################
+
+sub sine_model{
+	my($s_int, $s_slope, $ea0, $ea1, $ea2, $s_amp, $s_frq, $s_sht);
+	my($x_val, $y_est);
+
+	($s_int, $s_slope, $ea0, $ea1, $ea2, $s_amp, $s_frq, $s_sht, $x_val) = @_;
+#
+#--- linear part
+#
+	$y_est  = $s_int + $s_slope * $x_val;
+#
+#--- exponential part
+#
+	$y_est += $ea1 * exp($ea2 * $x_val) + $ea0;
+#
+#--- sine part
+#
+	$y_est += $s_amp * sin($s_frq * $x_val - $s_sht);
+
+	return($y_est);
+}

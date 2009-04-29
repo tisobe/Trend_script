@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Apr 09, 2009							#
+#		last update Apr 28, 2009							#
 #												#
 #################################################################################################
 
@@ -88,6 +88,13 @@ if($range !~ /f/i){
 		$hour_binning = 0;
 		$nterms       = 2;
 	}
+        if($nterms =~ /e/i){                    #--- if exp is fit for a long term use this
+                                                #--- for quarter
+                $nterms = 3;
+        }elsif($nterms =~ /s/i){                #--- if sine is fit for a long term use this
+                                                #--- for quarter
+                $nterms = 2;
+        }
 }
 
 #
