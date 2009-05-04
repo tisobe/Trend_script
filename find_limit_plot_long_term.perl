@@ -10,7 +10,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Apr 29, 2009							#
+#		last update Apr 30, 2009							#
 #												#
 #################################################################################################
 
@@ -21,9 +21,6 @@ use PGPLOT;
 $www_dir1 = '/data/mta/www/mta_envelope_trend/';
 $www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
 $save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
-
-$www_dir1 = './';
-$www_dir2 = './';
 
 #
 #--- setting:
@@ -1215,7 +1212,7 @@ if($nterms =~ /e/i){
 		$y_est += ${p_min.$n.$last} * power($x_adj, $n);
 	}
 	$y_est = $y_est - $widen * $pmin_sig;
-	for($n = 1; $n <= $nterms; $n++){
+	for($n = 0; $n < $nterms; $n++){
 		${a.$n}    = ${p_min.$n.$last};
 	}
 }
@@ -1279,7 +1276,7 @@ if($nterms =~ /e/i){
 		$y_est += ${p_max.$n.$last} * power($x_adj, $n);
 	}
 	$y_est = $y_est +  $widen * $pmax_sig;
-	for($n = 1; $n <= $nterms; $n++){
+	for($n = 0; $n <= $nterms; $n++){
 		${a.$n}    = ${p_max.$n.$last};
 	}
 }
@@ -1754,7 +1751,7 @@ if($lim_s =~ /both/i){
 	 		}
 	 		$y_est = $y_est - $widen * $pmin_sig + $avgy_min;
 
-		  	for($n = 1; $n <= $nterms; $n++){
+		  	for($n = 0; $n <= $nterms; $n++){
 			   	${a.$n}    = ${p_min.$n.$last};
 		  	}
 		}
@@ -1819,7 +1816,7 @@ if($lim_s =~ /both/i){
         		}
         		$y_est = $y_est +  $widen * $pmax_sig;
 
-		  	for($n = 1; $n <= $nterms; $n++){
+		  	for($n = 0; $n <= $nterms; $n++){
 			   	${a.$n}    = ${p_max.$n.$last};
 		  	}
 		}

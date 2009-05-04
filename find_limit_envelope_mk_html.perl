@@ -6,7 +6,7 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Mar 12, 2009								#
+#		last update: May 01, 2009								#
 #													#
 #########################################################################################################
 
@@ -143,9 +143,9 @@ print TOP "<p>\n";
 print TOP "If you like to check all yellow violations, go to \n";
 print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/violation_table.html'>\n";
 print TOP "MTA Estimated Date of Yellow Limit Violations</a> page.\n";
-print TOP " or \n";
-print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/SnapShot/violation_table.html'>\n";
-print TOP "Snapshot Estimated Date of Yellow Limit Violations</a> page.\n";
+#print TOP " or \n";
+#print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/SnapShot/violation_table.html'>\n";
+#print TOP "Snapshot Estimated Date of Yellow Limit Violations</a> page.\n";
 print TOP "</p>\n";
 
 
@@ -464,6 +464,7 @@ print TOP "<tr><td>\n";
 
 #-------------------------------------------------------------------------------
 
+if($xxxx == 99999){		#---- a fake loop to ignore the following section.
 #
 #---- read all about limit violation for op
 #
@@ -637,11 +638,13 @@ while(<FH>){
 print TOP "</td></tr>\n";
 print TOP "</table>\n";
 
+}		#------ end of the fake loop $xxxxx == 99999
+
 print TOP "</table>\n";
 print TOP "</center>\n";
 
 print TOP "<br><hr><br>\n";
-print TOP "Last Update: Mar 11, 2009<br>\n";
+print TOP "Last Update: May 01, 2009<br>\n";
 print TOP "If you have questions, contact T. Isobe (<a href='mailto:isobe\@head.cfa.harvard.edu'>";
 print TOP "isobe\@head.cfa.harvard.edu</a>)\n";
 
