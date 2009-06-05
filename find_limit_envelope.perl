@@ -1141,7 +1141,7 @@ pgptxt(2006.10, $ymin, 90, 0, "Relaxed EPHIN Const.");
 pgsci(5);
 pgarro(2008.3, $ymin, 2008.3, $head);
 pgsci(1);
-pgptxt(2008.3 $ymin, 90, 0, "ACIS Det House Off");
+pgptxt(2008.3, $ymin, 90, 0, "ACIS Det House Off");
 
 
 if($range =~/\q/i || $range =~ /w/i){
