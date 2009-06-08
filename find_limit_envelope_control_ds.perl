@@ -170,7 +170,7 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col\n";
-	system("/opt/lcoal/bin/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("/opt/local/bin/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 	system("gzip -f merged.fits");
 	system("mv merged.fits.gz $saved_dir/$fitsgz");
