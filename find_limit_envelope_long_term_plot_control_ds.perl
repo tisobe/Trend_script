@@ -1,4 +1,4 @@
-#/usr/bin/perl
+#/opt/local/bin/perl
 
 #########################################################################################
 #											#
@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Apr 13, 2009						#
+#		last update: Jun 08, 2009						#
 #											#
 #########################################################################################
 
@@ -101,7 +101,7 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col2\n";
-	system("perl $bin_dir/find_limit_plot_long_term.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("/opt/local/bin/perl $bin_dir/find_limit_plot_long_term.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 #
 #---- if both mta and p009 plots are created, save them in different directories

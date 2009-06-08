@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/opt/local/bin/perl
 
 #########################################################################################
 #											#
@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 26, 2008						#
+#		last update: Jun 08, 2009						#
 #											#
 #########################################################################################
 
@@ -58,7 +58,7 @@ foreach $ent (@list){
 	$data_name = $atemp[0];
 	$dir_name  = uc($data_name);
 
-	print OUT "perl $bin_dir/find_limit_envelope_control_ds.perl $ent $limit $range\n";
+	print OUT "/opt/local/bin/perl $bin_dir/find_limit_envelope_control_ds.perl $ent $limit $range\n";
 }
 #
 #--- remove older results
@@ -79,8 +79,8 @@ if($range =~ /f/i){
 
 if($range =~ /f/i){
 	print OUT "\n";
-	print OUT "perl $bin_dir/find_limit_envelope_mk_html.perl\n";
-	print OUT "perl $bin_dir/find_limit_violation_table.perl\n";
+	print OUT "/opt/local/bin/perl $bin_dir/find_limit_envelope_mk_html.perl\n";
+	print OUT "/opt/local/bin/perl $bin_dir/find_limit_violation_table.perl\n";
 }
 
 close(OUT);
@@ -116,7 +116,7 @@ foreach $ent (@list){
 	$data_name = $atemp[0];
 	$dir_name  = uc($data_name);
 
-	 print OUT "perl $bin_dir/find_limit_envelope_control_deriv.perl $ent $limit $range\n";
+	 print OUT "/opt/local/bin/perl $bin_dir/find_limit_envelope_control_deriv.perl $ent $limit $range\n";
 }
 close(OUT);
 

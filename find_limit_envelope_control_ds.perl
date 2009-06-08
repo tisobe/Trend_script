@@ -1,4 +1,4 @@
-#/usr/bin/perl
+#/opt/local/bin/perl
 
 #########################################################################################
 #											#
@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Apr 07, 2009						#
+#		last update: Jun 08, 2009						#
 #											#
 #########################################################################################
 
@@ -170,7 +170,7 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col\n";
-	system("perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("/opt/lcoal/bin/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 	system("gzip -f merged.fits");
 	system("mv merged.fits.gz $saved_dir/$fitsgz");
