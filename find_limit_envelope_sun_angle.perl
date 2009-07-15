@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jan 13, 2009							#
+#		last update Jul 15, 2009							#
 #												#
 #################################################################################################
 
@@ -481,7 +481,7 @@ pgsci(1);
 pglabel("Sun Angle", "$col_name", "");
 
 pgclos();
-system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
+system("echo ''|/opt/local/bin/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
 
 system("rm pgplot.ps");
 

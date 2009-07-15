@@ -10,7 +10,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jun 08, 2009							#
+#		last update Jul 15, 2009							#
 #												#
 #################################################################################################
 
@@ -1346,7 +1346,7 @@ pgptxt(2008.3, $ymin, 90, 0, "ACIS Det House Off");
 pglabel("Time (Year)", "$col_name", "");
 
 pgclos();
-system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
+system("echo ''|/opt/local/bin/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
 
 system("rm pgplot.ps");
 
@@ -1887,7 +1887,7 @@ if($lim_s =~ /both/i){
 	}
 	
 	pgclos();
-	system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name2");
+	system("echo ''|/opt/local/bin/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name2");
 	
 	system("rm pgplot.ps");
 

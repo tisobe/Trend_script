@@ -6,7 +6,7 @@
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Apr 21, 2009							#
+#		last update Jul 15, 2009							#
 #												#
 #################################################################################################
 
@@ -616,86 +616,3 @@ sub boxed_interval_binning{
 	}
 }
 
-
-
-######################################################################################
-### ydate_to_y1998sec: 20009:033:00:00:00 format to 349920000 fromat	       ###
-######################################################################################
-
-sub ydate_to_y1998sec{
-#
-#---- this script computes total seconds from 1998:001:00:00:00
-#---- to whatever you input in the same format. it is equivalent of
-#---- axTime3 2008:001:00:00:00 t d m s
-#---- there is no leap sec corrections.
-#
-
-	my($date, $atemp, $year, $ydate, $hour, $min, $sec, $yi);
-	my($leap, $ysum, $total_day);
-
-	($date)= @_;
-
-	@atemp = split(/:/, $date);
-	$year  = $atemp[0];
-	$ydate = $atemp[1];
-	$hour  = $atemp[2];
-	$min   = $atemp[3];
-	$sec   = $atemp[4];
-
-	$leap  = 0;
-	$ysum  = 0;
-	for($yi = 1998; $yi < $year; $yi++){
-		$chk = 4.0 * int(0.25 * $yi);
-		if($yi == $chk){
-			$leap++;
-		}
-		$ysum++;
-	}
-
-	$total_day = 365 * $ysum + $leap + $ydate -1;
-
-	$total_sec = 86400 * $total_day + 3600 * $hour + 60 * $min + $sec;
-
-	return($total_sec);
-}
-
-###############################################################################
-###sec1998_to_fracyear: change sec from 1998 to time in year               ####
-###############################################################################
-
-sub sec1998_to_fracyear{
-
-        my($t_temp, $normal_year, $leap_year, $year, $j, $k, $chk, $jl, $base, $yfrac, $year_date);
-
-        ($t_temp) = @_;
-
-        $t_temp +=  86400;
-
-        $normal_year = 31536000;
-        $leap_year   = 31622400;
-        $year        = 1998;
-
-        $j = 0;
-        OUTER:
-        while($t_temp > 1){
-                $jl = $j + 2;
-                $chk = 4.0 * int(0.25 * $jl);
-                if($chk == $jl){
-                        $base = $leap_year;
-                }else{
-                        $base = $normal_year;
-                }
-
-                if($t_temp > $base){
-                        $year++;
-                        $t_temp -= $base;
-                        $j++;
-                }else{
-                        $yfrac = $t_temp/$base;
-                        $year_date = $year + $yfrac;
-                        last OUTER;
-                }
-        }
-
-        return $year_date;
-}
