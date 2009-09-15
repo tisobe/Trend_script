@@ -6,7 +6,7 @@
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Aug 14, 2009							#
+#		last update Sep 14, 2009							#
 #												#
 #################################################################################################
 
@@ -133,14 +133,57 @@ print "MSID: $msid\n";
 	$chdata = $q_list[$tot];
 	change_to_hr_bin();
 
+
 #
 #--- add a new data into the full range data
 #
 
 	if($w_cnt > 0){		#---w_cnt is from change_to_hr_bin(). only when quaterly has data, add it
 
-		system("dmmerge \"out1.fits,   out2.fits\"    merged.fits  outBlock='' columnList='' clobber=yes ");
-		system("dmmerge \"limit1.fits, limit2.fits\" lmerged.fits  outBlock='' columnList='' clobber=yes ");
+		system("dmlist out1.fits opt=data > temp");
+		open(FH, "temp");
+		open(OUT, ">temp_out");
+		OUTER:
+		while(<FH>){
+			chomp $_;
+			@atemp = split(/\s+/, $_);
+			if($atemp[0] =~ /\w/){
+				next OUTER;
+			}
+			if($atemp[0] =~ /\d/){
+				print OUT  "$atemp[1]\t$atemp[2]\t$atemp[3]\t$atemp[4]\n";
+			}elsif($atemp[1] =~ /\d/){
+				print OUT  "$atemp[2]\t$atemp[3]\t$atemp[4]\t$atemp[5]\n";
+			}
+		}
+		close(OUT);
+		close(FH);
+		system("dmcopy temp_out out1_mod.fits");
+		system("rm temp_out");
+
+		system("dmlist limit1.fits opt=data > temp");
+		open(FH, "temp");
+		open(OUT, ">temp_out");
+		OUTER:
+		while(<FH>){
+			chomp $_;
+			@atemp = split(/\s+/, $_);
+			if($atemp[0] =~ /\w/){
+				next OUTER;
+			}
+			if($atemp[0] =~ /\d/){
+				print OUT  "$atemp[1]\t$atemp[2]\t$atemp[3]\t$atemp[4]\n";
+			}elsif($atemp[1] =~ /\d/){
+				print OUT  "$atemp[2]\t$atemp[3]\t$atemp[4]\t$atemp[5]\n";
+			}
+		}
+		close(OUT);
+		close(FH);
+		system("dmcopy temp_out limit1_mod.fits");
+		system("rm temp_out");
+
+		system("dmmerge \"out1_mod.fits,   out2.fits\"    merged.fits  outBlock='' columnList='' clobber=yes ");
+		system("dmmerge \"limit1_mod.fits, limit2.fits\" lmerged.fits  outBlock='' columnList='' clobber=yes ");
 	
 		system("gzip merged.fits");
 		system("mv merged.fits.gz $ent");
@@ -148,8 +191,8 @@ print "MSID: $msid\n";
 		system("gzip lmerged.fits");
 		system("mv lmerged.fits.gz $f_limit[$tot]");
 	
-		system("rm out1.fits out2.fits");
-		system("rm limit1.fits limit2.fits");
+		system("rm out1.fits out2.fits out1_mod.fits");
+		system("rm limit1.fits limit2.fits limit1_mod.fits");
 	}
 	$tot++;
 }
@@ -310,7 +353,7 @@ sub change_to_hr_bin{
 			print OUT "$time[$i]\t$data[$i]\n";
 		}
 		close(OUT);
-		system("ascii2fits out_file out2.fits");
+		system("dmcopy  out_file out2.fits clobber=yes");
 		system("rm out_file");
 #
 #---- now find min and max
@@ -333,7 +376,7 @@ sub change_to_hr_bin{
 			print OUT "$bcnt\n";
 		}
 		close(OUT);
-		system("ascii2fits out_file limit2.fits");
+		system("dmcopy  out_file limit2.fits clobber=yes");
 		system("rm out_file");
 	}
 }
@@ -726,4 +769,47 @@ sub y1999sec_to_ydate{
 
         return($time);
 }
+
+
+###############################################################################
+###sec1998_to_fracyear: change sec from 1998 to time in year               ####
+###############################################################################
+
+sub sec1998_to_fracyear{
+
+        my($t_temp, $normal_year, $leap_year, $year, $j, $k, $chk, $jl, $base, $yfrac, $year_date);
+
+        ($t_temp) = @_;
+
+        $t_temp +=  86400;
+
+        $normal_year = 31536000;
+        $leap_year   = 31622400;
+        $year        = 1998;
+
+        $j = 0;
+        OUTER:
+        while($t_temp > 1){
+                $jl = $j + 2;
+                $chk = 4.0 * int(0.25 * $jl);
+                if($chk == $jl){
+                        $base = $leap_year;
+                }else{
+                        $base = $normal_year;
+                }
+
+                if($t_temp > $base){
+                        $year++;
+                        $t_temp -= $base;
+                        $j++;
+                }else{
+                        $yfrac = $t_temp/$base;
+                        $year_date = $year + $yfrac;
+                        last OUTER;
+                }
+        }
+
+        return $year_date;
+}
+
 
