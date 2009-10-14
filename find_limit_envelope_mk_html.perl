@@ -6,7 +6,7 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Jun 08, 2009								#
+#		last update: Oct 14, 2009								#
 #													#
 #########################################################################################################
 
@@ -147,6 +147,13 @@ print TOP "MTA Estimated Date of Yellow Limit Violations</a> page.\n";
 #print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/SnapShot/violation_table.html'>\n";
 #print TOP "Snapshot Estimated Date of Yellow Limit Violations</a> page.\n";
 print TOP "</p>\n";
+
+print TOP "<p>\n";
+print TOP "If you like to check the break points of the plots, go to \n";
+print TOP "<a href='http://asc.harvard.edu/mta_days/mta_envelope_trend/break_point_list.html'>\n";
+print TOP "Break Point Table</a>.\n";
+print TOP "</p>\n";
+
 
 
 print TOP "<hr><BR>\n";
