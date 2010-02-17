@@ -87,10 +87,13 @@ $ms_dir = uc (@atemp[0]);
 
 if($range =~ /f/i){
 	$s_dir = 'Full_range';
+#	$out_dir = "$www_dir".'Full_range/'."$ldir/";
 }elsif($range =~ /q/i){
 	$s_dir = 'Quarterly';
+#	$out_dir  = "$www_dir".'Quarterly/'."$ldir/";
 }elsif($range =~ /w/i){
 	$s_dir = 'Weekly';
+#	$out_dir  = "$www_dir".'Weekly/'."$ldir/";
 }
 
 $saved_dir = "$www_dir"."$s_dir/"."$ms_dir/"."Fits_data/";
@@ -107,14 +110,17 @@ for($i = 0; $i < $total; $i++){
 		$col    = '_'."$msid".'_avg';
 	}
 	$col2   = "$msid".'_avg';
-	$fits   = "$msid".'.fits';
-	$fitsgz = "$fits".'.gz';
+	$fits   = "$msid".'_data.fits';
+#	$fitsgz = "$fits".'.gz';
+
 #
 #---- now call the script actually plots the data
 #
 
-	system("/opt/local/bin/perl $bin_dir/find_limit_envelope.perl $saved_dir/$fitsgz $col2 $degree[$i]  $limit $range $lim_slc $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("/opt/local/bin/perl $bin_dir/find_limit_envelope.perl $saved_dir/$fitsz $col2 $degree[$i]  $limit $range $lim_slc $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+
 
 	system("mv *gif             $out_dir/Plots/");
 	system("mv *fitting_results $out_dir/Results/");
+
 }
