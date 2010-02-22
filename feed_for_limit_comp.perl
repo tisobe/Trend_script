@@ -20,7 +20,7 @@ $save_dir = "$mta_dir/Save_data/";
 $www_dir  = '/data/mta_www/mta_envelope_trend/';
 
 
-$input = `cat data_file_list`;
+$input = `cat $save_dir/data_file_list`;
 @list  = split(/\s+/, $input);
 
 foreach $ent (@list){

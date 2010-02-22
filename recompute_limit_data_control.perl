@@ -86,7 +86,7 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col\n";
-	system("/opt/local/bin/perl $bin_dir/recompute_limit_data.perl $saved_dir/$fitsgz $col $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("/opt/local/bin/perl $bin_dir/recompute_limit_data.perl $saved_dir/$fitsgz $col 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 	system("mv *_min_max.fits $new_dir/");
 }
