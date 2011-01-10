@@ -7,7 +7,7 @@
 #														#
 #		author: t. isobe (tisobe@cfa.harvard.edu)							#
 #														#
-#		last update: Feb. 22, 2010									#
+#		last update: May 18, 2010									#
 #														#
 #################################################################################################################
 
@@ -20,5 +20,5 @@ $input    = ` cat $save_dir/data_file_list`;
 
 foreach $ent (@list){
 	print "$ent\n";
-	system("/opt/local/bin/perl  /data/mta/Script/Fitting/find_limit_envelope_control_plot_only_new.perl $ent y f mta");
+	system("/opt/local/bin/perl  /data/mta/Script/Fitting/Trend_script/find_limit_envelope_control_plot_only_new.perl $ent y f mta");
 }

@@ -5,7 +5,7 @@ use PGPLOT;
 #												#
 #	find_limit_plot_long_term_recomp_fit.perl: estimate limit envelope around given data 	#
 #					for a long term data. use saved data. This version	#
-#					compute for each periods, not just the last part.	#
+#					computes for each periods, not just the last part.	#
 #												#
 #		data are in dataseeker format	(col names are in  <col>_avg)			#
 #												#

@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jul 15, 2009						#
+#		last update: May 17, 2010						#
 #											#
 #########################################################################################
 
@@ -175,7 +175,11 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col\n";
-	system("/opt/local/bin/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	if($b_point1[$i]  >  2000){
+		system("/opt/local/bin/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	}else{
+		system("/opt/local/bin/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	}
 
 	system("gzip -f merged.fits");
 	system("mv merged.fits.gz $saved_dir/$fitsgz");

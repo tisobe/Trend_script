@@ -9,7 +9,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Feb 22, 2010						#
+#		last update: May 18, 2010						#
 #											#
 #########################################################################################
 
@@ -119,7 +119,7 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "\t$col2\n";
-	system("/opt/local/bin/perl /data/mta/Script/Fitting/find_limit_plot_long_term_recomp_fit.perl  $saved_dir/$fits $col2 $degree[$i]  $limit $range $lim_slc  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("/opt/local/bin/perl /data/mta/Script/Fitting/Trend_script/find_limit_plot_long_term_recomp_fit.perl  $saved_dir/$fits $col2 $degree[$i]  $limit $range $lim_slc  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 
 	system("mv *gif             $out_dir/Plots/");
