@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: May 17, 2010						#
+#		last update: Mar 21, 2011						#
 #											#
 #########################################################################################
 
@@ -14,12 +14,23 @@
 #---- directory
 #
 
-$bin_dir  = '/data/mta/MTA/bin/';
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 
-$mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
-$save_dir = "$mta_dir/Save_data/";
-$www_dir  = '/data/mta/www/mta_envelope_trend/';
-$www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
+
 
 $b_list   = $ARGV[0];	#---- e.g. oba_list
 $limit    = $ARGV[1];	#---- yellow (y) or red (r) limit
@@ -65,6 +76,7 @@ if($range =~ /w/i){
 
 	$out_dir  = "$www_dir".'Weekly/'."$ldir/";
 	$out_dir2 = "$www_dir2".'Weekly/'."$ldir/";
+	$odata_dir = "$data_dir".'Weekly/'."$ldir/";
 }elsif($range =~ /q/i){
 #
 #--- quarterly case
@@ -92,6 +104,7 @@ if($range =~ /w/i){
 
 	$out_dir  = "$www_dir".'Quarterly/'."$ldir/";
 	$out_dir2 = "$www_dir2".'Quarterly/'."$ldir/";
+	$odata_dir = "$data_dir".'Quarterly/'."$ldir/";
 }else{
 #
 #--- full range
@@ -103,6 +116,7 @@ if($range =~ /w/i){
 
 	$out_dir  = "$www_dir".'Full_range/'."$ldir/";
 	$out_dir2 = "$www_dir2".'Full_range/'."$ldir/";
+	$odata_dir = "$data_dir".'Full_range/'."$ldir/";
 }
 
 open(FH, "$save_dir/Break_points/$b_list");
@@ -134,12 +148,18 @@ while(<FH>){
 }
 close(FH);
 
+OUTER:
 for($i = 0; $i < $total; $i++){
         $msid_list[$i]= uc($msid_list[$i]);
         $msid   = lc($msid_list[$i]);
+	if($msid eq '' || $msid =~ /\s/){
+		next OUTER;
+	}
+
         if($msid =~ /3FAMTRAT/i || $msid =~ /3FAPSAT/i || $msid =~ /3FASEAAT/i
                 || $msid =~ /3SMOTOC/i || $msid =~ /3SMOTSTL/i || $msid =~ /3TRMTRAT/i){
                 $col = "$msid_list[$i]".'_AVG';
+#                $col    = '_'."$msid".'_avg';
         }elsif($msid =~ /^DEA/i){
                 $col    = "$msid_list[$i]".'_avg';
         }else{
@@ -158,7 +178,7 @@ for($i = 0; $i < $total; $i++){
 
 	@atemp     = split(/_list/, $b_list);
 	$ms_dir    = uc (@atemp[0]);
-	$saved_dir = "$www_dir"."$r_dir/"."$ms_dir/"."Fits_data/";
+	$saved_dir = "$data_dir"."$r_dir/"."$ms_dir/"."Fits_data/";
 	$fits     = "$msid".'.fits';
 	$fitsgz   = "$fits".'.gz';
 
@@ -197,17 +217,18 @@ print "$col\n";
 		$result_file = `ls *fitting_results2`;
 		chomp $result_file;
 		$result_file =~ s/fitting_results2/fitting_results/;
-		system("mv *fitting_results2  $out_dir2/Results/$result_file");
+		$rout_dir = "$data_dir"."$r_dir/"."$ms_dir"."/Results/$result_file";
+		system("mv *fitting_results2  $rout_dir");
 	}
 	
 	system("mv *gif             $out_dir/Plots/");
-	system("mv *fitting_results $out_dir/Results/");
+	system("mv *fitting_results $odata_dir/Results/");
 	
-	if($range != /f/){
-		system("rm zstat");
-	}else{
-		system("rm trimed.fits zstat");
-	}
+#	if($range != /f/){
+#		system("rm zstat");
+#	}else{
+#		system("rm trimed.fits zstat");
+#	}
 }
 	
 ######################################################################################

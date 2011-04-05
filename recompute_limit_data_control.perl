@@ -15,12 +15,22 @@
 #---- directory
 #
 
-$bin_dir  = '/data/mta/MTA/bin/';
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 
-$mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
-$save_dir = "$mta_dir/Save_data/";
-$www_dir  = '/data/mta/www/mta_envelope_trend/';
-$www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
 
 $b_list = $ARGV[0];	#---- e.g. oba_list
 
@@ -28,7 +38,7 @@ $range = 'f';
 
 @atemp     = split(/_list/, $b_list);
 $ldir      = uc($atemp[0]);
-$saved_dir = "$www_dir"."Full_range/"."$ldir/"."Fits_data/";
+$saved_dir = "$data_dir"."Full_range/"."$ldir/"."Fits_data/";
 
 $new_dir   = './Temp2/'."$ldir/".'Fits_data/';
 $chk       =`ls ./Temp2/`;

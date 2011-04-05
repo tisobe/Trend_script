@@ -6,7 +6,7 @@
 #															#
 #		author: tisobe (tisobe@cfa.harvard.edu)									#
 #															#
-#		last update: Jan 10, 2011										#
+#		last update: Mar 22, 2011										#
 #															#
 #########################################################################################################################
 
@@ -21,6 +21,29 @@
 #	set path = (/home/ascds/DS.release/bin/  $path)
 #	set path = (/home/ascds/DS.release/otsbin/  $path)
 #
+
+#############################################################################################
+#
+#--- set directry
+#
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
+
+##############################################################################################
 
 #
 #--- these files do not have data (zero), and skip them
@@ -79,7 +102,7 @@ $end      = ydate_to_y1998sec($end_yd);
 #--- create the list of all full range data
 #
 
-$input =` ls  /data/mta_www/mta_envelope_trend/Full_range/*/Fits_data/*_data.fits`;
+$input =` ls  $data_dir/Full_range/*/Fits_data/*_data.fits`;
 @list  = split(/\s+/, $input);
 
 #
@@ -129,7 +152,7 @@ print "$ent\n";
 #--- find a saved file name
 #
 				@btemp = split(/Full_range\//, $ent);
-				$saved = '/data/mta_www/mta_envelope_trend/Full_range_save/'."$btemp[1]";
+				$saved = "$data_dir".'/Full_range_save/'."$btemp[1]";
 				$line  = "$saved".'[cols col1]';
 #
 #--- find the last entry time of the save file
@@ -166,9 +189,11 @@ print "$ent\n";
 				$msid  = lc($ctemp[0]);
 				if($msid =~ /3FAMTRAT/i || $msid =~ /3FAPSAT/i || $msid =~ /3FASEAAT/i
 						|| $msid =~ /3SMOTOC/i || $msid =~ /3SMOTSTL/i || $msid =~ /3TRMTRAT/i){
-						$col = "$msid_list[$i]".'_AVG';
+						 $name = uc($msid);
+						$col = "$name".'_AVG';
 				 }elsif($msid =~ /^DEA/i){
-						$col    = "$msid_list[$i]".'_avg';
+						 $name = uc($msid);
+						$col    = "$name".'_avg';
 				}else{
 						$col    = '_'."$msid".'_avg';
 				}
@@ -179,7 +204,7 @@ print "$ent\n";
 				$line = "columns=$col timestart=$start_yd timestop=$end_yd";
 
 
-				system("cp /data/mta/Script/Fitting/Trend_script//Save_data/test .");
+				system("cp $save_dir/test .");
 				system("dataseeker.pl infile=test outfile=extracted.fits search_crit=\"$line\" ");
 
 
@@ -216,8 +241,8 @@ close(ZOUT);
 #--- update save files
 #
 
-system("rm -rf /data/mta_www/mta_envelope_trend/Full_range_save");
-system("cp -r  /data/mta_www/mta_envelope_trend/Full_range  /data/mta_www/mta_envelope_trend/Full_range_save");
+system("rm -rf $data_dir/Full_range_save");
+system("cp -r  $data_dir/Full_range  $data_dir/Full_range_save");
 
 
 $problem_file = 'problem_files_'."$this_year".'_'."$ydate";
@@ -233,7 +258,7 @@ if($cnt_prblem == 0){
 	open(ZOUT, ">temp_mail");
 	print ZOUT  "The following files had problems, and modified\n\n";
 	system("cat $problem_file  |mailx -s\"Subject: Problem found in Envelope Trending\n\" -risobe\@head.cfa.harvard.edu isobe\@head.cfa.harvard.edu");
-	system("mv $problem_file /data/mta/Script/Fitting/Exc/Full_range/Problem_lists/.");
+	system("mv $problem_file $house_keeping/Problem_lists/.");
 }
 
 

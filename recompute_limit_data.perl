@@ -8,7 +8,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Feb 16, 2010							#
+#		last update Apr 05, 2011							#
 #												#
 #################################################################################################
 
@@ -16,9 +16,22 @@ use PGPLOT;
 #--- directory setting
 #
 
-$www_dir1 = '/data/mta/www/mta_envelope_trend/';
-$www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
-$save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
 
 #
 #--- setting:
@@ -51,6 +64,15 @@ $limit_table2 = "$save_dir/limit_table";
 
 $fits   = $ARGV[0];		#--- input fits file, dataseeker format
 $col    = $ARGV[1];		#--- data column name e.g. oobthr44_avg 
+$lbox   = $ARGV[2];		#--- sampling length: s: 2 days, w: 7 days, m: 30 days;
+
+if($lbox =~ /d/){
+	$m = 2;
+}elsif($lbox =~ /\w/ && $lbox !~ /\d/){
+	$m = 3;
+}else{
+	$m = 2;
+}
 
 $range  = 'f';			#--- only for full range data
 
@@ -76,7 +98,16 @@ $today    = $today + $uyday/$y_length;
 
 if($range =~ /f/i){
 	$end_time = $uyear + 1900 + 1;
-	$box_length   = 0.019178082;    	#--- binning size: one week in year
+	if($lbox =~ /s/i){
+		$box_length = 5.479452054e-3;		#---- 2 days box size
+	}elsif($lbox =~ /w/i){
+		$box_length   = 0.019178082;    	#--- binning size: one week in year
+	}elsif($lbox =~ /m/i){
+		$box_length   = 0.083333333;    	#--- binning size: one month in year
+	}else{
+		$box_length = 5.479452054e-3;		#---- 2 days box size
+	}
+
 }elsif($range =~ /q/i){
 	$end_time   = $today;
 	$datastart  = $today - 0.25;
@@ -93,7 +124,7 @@ if($range =~ /f/i){
 #
 
 @break_point = ($datastart);
-$m           = 2;
+#$m           = 2;
 $num_break   = 0;
 OUTER:
 while($ARGV[$m] =~ /\d/ && $ARGV[$m] ne ''){
@@ -296,9 +327,9 @@ sub boxed_interval_min_max{
 #--- first remove extreme outlyers
 #
 		@gtemp  = sort{$a<=>$b} @pdata;
-		$gstart = int (0.001 * $ptotal);
+		$gstart = int (0.0005 * $ptotal);		#<-- modified from 0.001 1/27
 		$gstop  = $ptotal - $gstart;
-		$gdiff  = $gstop - $gstart;
+		$gdiff  = $gstop  - $gstart;
 		if($gdiff <= 0){
 			next OUTER1;
 		}

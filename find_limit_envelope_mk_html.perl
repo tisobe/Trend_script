@@ -6,7 +6,7 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Oct 15, 2009								#
+#		last update: Mar 22, 2011								#
 #													#
 #########################################################################################################
 
@@ -14,12 +14,26 @@
 #--- set directory location etc
 #
 
-$www_dir  = '/data/mta_www/mta_envelope_trend/';
-$www_dir2 = '/data/mta_www/mta_envelope_trend/SnapShot/';
-$mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 
-$inlist   = "$mta_dir/Save_data/dataseeker_input_list";
-$inlist2  = "$mta_dir/Save_data/deriv_input_list";
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
+
+
+$inlist   = "$save_dir/dataseeker_input_list";
+$inlist2  = "$save_dir/deriv_input_list";
 
 #
 #---- find today's year date
@@ -43,7 +57,7 @@ $today     = $this_year + ($ydate + 1)/$y_length;     #---- add one day to make 
 #---- read all about limit violation
 #
 
-open(FH, "$www_dir/full_range_results");
+open(FH, "$data_dir/Results/full_range_results");
 
 while(<FH>){
 	chomp $_;
@@ -182,7 +196,7 @@ while(<FH>){
 #
 #---- read indivisual entries
 #
-	open(IN, "$mta_dir/Save_data/Break_points/$infile");
+	open(IN, "$save_dir/Break_points/$infile");
 	while(<IN>){
 		chomp $_;
 		@atemp = split(/\s+/, $_);
@@ -329,7 +343,7 @@ while(<FH>){
 #
 #---- read indivisual entries
 #
-	open(IN, "$mta_dir/Save_data/Break_points/$infile");
+	open(IN, "$save_dir/Break_points/$infile");
 	while(<IN>){
 		chomp $_;
 		@atemp = split(/\s+/, $_);
@@ -476,7 +490,7 @@ if($xxxx == 99999){		#---- a fake loop to ignore the following section.
 #---- read all about limit violation for op
 #
 
-open(FH, "$www_dir2/full_range_results");
+open(FH, "$data_dir/Results/full_range_results");
 
 while(<FH>){
 	chomp $_;
@@ -520,7 +534,7 @@ while(<FH>){
 #
 #---- read indivisual entries
 #
-	open(IN, "$mta_dir/Save_data/Break_points/$infile");
+	open(IN, "$save_dir/Break_points/$infile");
 	while(<IN>){
 		chomp $_;
 		@atemp = split(/\s+/, $_);

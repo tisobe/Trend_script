@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jun 08, 2009						#
+#		last update: Mar 23, 2011						#
 #											#
 #########################################################################################
 
@@ -14,12 +14,22 @@
 #
 #---- directory
 #
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 
-$bin_dir  = '/data/mta/MTA/bin/';
-$mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
-$save_dir = "$mta_dir/Save_data/";
-$www_dir1 = '/data/mta_www/mta_envelope_trend/';
-$www_dir2 = '/data/mta_www/mta_envelope_trend/SnapShot/';
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
 
 #
 #---- read argument
@@ -32,7 +42,7 @@ $lim_slc  = $ARGV[0];	#--- which limit table to use mta or op
 #
 
 if($lim_slc =~ /mta/){
-	$www_dir = $www_dir1;
+#	$www_dir = $www_dir1;
 	$limit_table = '/data/mta/Test/op_limits.db';
 }else{
 	$www_dir = $www_dir2;
@@ -92,7 +102,7 @@ close(FH);
 #---- find violations
 #
 
-open(FH, "$www_dir/full_range_results");
+open(FH, "$data_dir/Results/full_range_results");
 while(<FH>){
 	chomp $_;
 	@atemp = split(/<>/, $_);
@@ -104,7 +114,7 @@ while(<FH>){
 close(FH);
 
 
-$input =` cat $mta_dir/Save_data/dataseeker_input_list $mta_dir/Save_data/deriv_input_list`;
+$input =` cat $save_dir/dataseeker_input_list $save_dir/deriv_input_list`;
 @main_list = split(/\s+/, $input);
 
 open(OUT, ">$www_dir/violation_table.html");
@@ -142,7 +152,7 @@ print OUT "</p>\n";
 
 
 foreach $ent (@main_list){
-	open(FH, "$mta_dir/Save_data/Break_points/$ent");
+	open(FH, "$save_dir/Break_points/$ent");
 	@msid  = ();
 	$v_cnt = 0;
 	while(<FH>){

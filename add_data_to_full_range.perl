@@ -6,7 +6,7 @@
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Sep 14, 2009							#
+#		last update Mar 22, 2011							#
 #												#
 #################################################################################################
 
@@ -15,8 +15,22 @@
 #    set a few things before moving to others...
 #
 
-$www_dir    = '/data/mta/www/mta_envelope_trend/';
-$save_dir   = '/data/mta/Script/Fitting/Trend_script/Save_data/';
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
 
 $box_length = 0.019178082;    #--- box size: a wee in year.
 
@@ -55,7 +69,7 @@ $month_ago_in_y = sec1998_to_fracyear($month_ago);
 #--- main full range data sets
 #
 
-$f_line = `ls $www_dir/Full_range/*/Fits_data/*_data.fits*`;
+$f_line = `ls $data_dir/Full_range/*/Fits_data/*_data.fits*`;
 @f_list =  split(/\s+/, $f_line);
 #---------TEST TEST
 #$f_line = `ls /data/mta/Script/Fitting/Ztemp/Temp2/*/Fits_data/*_data.fits*`;
@@ -418,13 +432,16 @@ sub boxed_interval_min_max{
 			$gtot4++;
 		}
 	}
-	$rchk  = $gtot2/$gdiff;
-	$rchkn = $gtot4/$gdiff;
+
+	if($gdiff != 0){
+		$rchk  = $gtot2/$gdiff;
+		$rchkn = $gtot4/$gdiff;
+	}
 #
 #--- if most of the data is "0", set the range between -1 and 1.
 #
 
-	if($rchk > 0.98){
+	if($rchk > 0.98 || $gdiff == 0){
 		$gtot     = $gtot2;
 		$test_avg = 0;
 		$test_sig = 1.0;

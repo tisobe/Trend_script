@@ -6,15 +6,36 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Oct 15, 2009 								#
+#		last update: Apr 05, 2011 								#
 #													#
 #########################################################################################################
+
+#
+#--- directory setting
+#
+
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
 
 #
 #--- read a table of cause of the break
 #
 
-open(FH, "/data/mta/Script/Fitting/Trend_script/Save_data/break_point_cause");
+open(FH, "$save_dir/break_point_cause");
 @date_c = ();
 @cause  = ();
 $c_cnt  = 0;
@@ -31,7 +52,7 @@ close(FH);
 #--- read a table of affected systems
 #
 
-open(FH, "/data/mta/Script/Fitting/Trend_script/Save_data/break_point_table");
+open(FH, "$save_dir/break_point_table");
 @date_b = ();
 @entry  = ();
 $b_cnt  = 0;
@@ -44,7 +65,7 @@ while(<FH>){
 }
 close(FH);
 
-open(OUT, ">break_point_master_table.html");
+open(OUT, ">$www_dir/break_point_master_table.html");
 
 print OUT '<!DOCTYPE     html PUBLIC "-//W3C//DTD XHTML 1.0 strict//EN"',"\n";
 print OUT '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',"\n";
@@ -134,7 +155,3 @@ print OUT "</body>\n";
 print OUT "</html>\n";
 
 close(OUT);
-
-system("mv break_point_master_table.html /data/mta_www/mta_envelope_trend/");
-
-

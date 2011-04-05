@@ -6,20 +6,41 @@
 #														#
 #		author: t. isobe (tisobe@cfa.harvard.edu)							#
 #														#
-#		last update: Oct 14, 2009									#
+#		last update: Apr 05, 2011									#
 #														#
 #################################################################################################################
 
 #
+#--- directory setting
+#
+
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
+
+#
 #--- read a list of main categories
 #
-open(FH, "/data/mta/Script/Fitting/Trend_script/Save_data/Break_points/mta_main_msids");
+open(FH, "$save_dir/Break_points/mta_main_msids");
 
 @list1 = ();
 while(<FH>){
 	chomp $_;
 	$category = lc($_);
-	$input = '/data/mta/Script/Fitting/Trend_script/Save_data/Break_points/'."$category".'_list';
+	$input = "$save_dir/Break_points/"."$category".'_list';
 	push(@list1, $input);
 }
 close(FH);
@@ -27,31 +48,22 @@ close(FH);
 #
 #--- read a list of secondary categories
 #
-open(FH, "/data/mta/Script/Fitting/Trend_script/Save_data/Break_points/mta_secondary_msids");
+open(FH, "$save_dir/Break_points/mta_secondary_msids");
 
 @list2 = ();
 while(<FH>){
 	chomp $_;
 	$category = lc($_);
-	$input = '/data/mta/Script/Fitting/Trend_script/Save_data/Break_points/'."$category".'_list';
+	$input = "$save_dir/Break_points/"."$category".'_list';
 	push(@list2, $input);
 }
 close(FH);
 
 #
-#--- check whether a directory already exists. if not create one.
-#
-$test = `ls  ./`;
-if($test =~ /break_point_tables/i){
-}else{
-	system('mkdir ./break_point_tables');
-}
-
-#
 #--- start writing a main html page.
 #
 
-open(OUT, '>break_point_list.html');
+open(OUT, '>$www_dir/break_point_list.html');
 
 print OUT '<!DOCTYPE	 html PUBLIC "-//W3C//DTD XHTML 1.0 strict//EN"',"\n";
 print OUT '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',"\n";
@@ -184,13 +196,7 @@ print OUT "</body>\n";
 print OUT "</html>\n";
 close(OUT);
 
-#
-#-- transfer the files to the wed site.
-#
-
-system("rm -rf /data/mta_www/mta_envelope_trend/break_point_tables");
-system("mv break_point_list.html break_point_tables  /data/mta_www/mta_envelope_trend/");
-
+system("chgrp mtagroup $www_dir/*html $www_dir/break_point_tables/*");
 
 
 ######################################################################################################
@@ -207,7 +213,7 @@ sub create_subpage{
 	$name  =~ s/_list//;
 	$name  = uc($name);
 	$table = "$name".'.html';
-	$link  = './break_point_tables/'."$table";
+	$link  = "$www_dir/break_point_tables/"."$table";
 
 	open(OUT2, ">$link");
 

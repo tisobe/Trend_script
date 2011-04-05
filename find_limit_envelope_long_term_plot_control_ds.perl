@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: May 17, 2010						#
+#		last update: Mar 23, 2011						#
 #											#
 #########################################################################################
 
@@ -14,16 +14,22 @@
 #---- directory
 #
 
-$bin_dir  = '/data/mta/MTA/bin/';
-#$bin_dir = './';
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 
-$mta_dir  = '/data/mta/Script/Fitting/Trend_script/';
-$save_dir = "$mta_dir/Save_data/";
-$www_dir  = '/data/mta/www/mta_envelope_trend/';
-$www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
 
-#$www_dir  = './';
-#$www_dir2 = './';
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
 
 
 $b_list   = $ARGV[0];	#---- e.g. oba_list
@@ -32,10 +38,10 @@ $range    = $ARGV[2];   #---- whether it is full (f), quarterly (q), or week (w)
 $both     = $ARGV[3];	#---- whether you want to create both mta and p009 plots
 $all      = $ARGV[4];	#---- if all, retrieve the entire data from dataseeker
 
-@atemp    = split(/_list/, $b_list);
-$ldir     = uc($atemp[0]);
-$data_dir = "$www_dir/".'Full_range/'."$ldir/".'Fits_data/';
-#$data_dir = '/data/mta/Script/Fitting/Ztemp/Temp2/'."$ldir/".'Fits_data/';
+@atemp     = split(/_list/, $b_list);
+$ldir      = uc($atemp[0]);
+$fdata_dir = "$data_dir/".'Full_range/'."$ldir/".'Fits_data/';
+$rdata_dir = "$data_dir/".'Full_range/'."$ldir/".'Results/';
 
 #
 #---- find today's year date
@@ -94,16 +100,20 @@ close(FH);
 for($i = 0; $i < $total; $i++){
         $msid      = lc($msid_list[$i]);
         $col2      = "$msid".'_avg';
-###	$fits_name = "$data_dir/"."$msid".'_data.fits.gz';
-	$fits_name = "$data_dir/"."$msid".'_data.fits';
+###	$fits_name = "$fdata_dir/"."$msid".'_data.fits.gz';
+	$fits_name = "$fdata_dir/"."$msid".'_data.fits';
 
 #
 #---- now call the script actually plots the data
 #
 
 print "$col2\n";
-	system("/opt/local/bin/perl $bin_dir/find_limit_plot_long_term.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+###	system("/opt/local/bin/perl $bin_dir/find_limit_plot_long_term.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
+#########################
+	system("/opt/local/bin/perl $bin_dir/find_limit_plot_long_term_recomp_fit.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+
+#########################
 #
 #---- if both mta and p009 plots are created, save them in different directories
 #
@@ -115,11 +125,11 @@ print "$col2\n";
 		$result_file = `ls *fitting_results2`;
 		chomp $result_file;
 		$result_file =~ s/fitting_results2/fitting_results/;
-		system("mv *fitting_results2  $out_dir2/Results/$result_file");
+		system("mv *fitting_results2  $rdata_dir/$result_file");
 	}
 	
 	system("mv *gif             $out_dir/Plots/");
-	system("mv *fitting_results $out_dir/Results/");
+	system("mv *fitting_results $rdata_dir/");
 }
 
 

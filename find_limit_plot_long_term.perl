@@ -10,7 +10,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jul 15, 2009							#
+#		last update Mar 23, 2011							#
 #												#
 #################################################################################################
 
@@ -18,9 +18,22 @@ use PGPLOT;
 #--- directory setting
 #
 
-$www_dir1 = '/data/mta/www/mta_envelope_trend/';
-$www_dir2 = '/data/mta/www/mta_envelope_trend/SnapShot/';
-$save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
 
 #
 #--- setting:
@@ -444,11 +457,11 @@ if($tcol !~ /_avg/i){
 }
 $ucol = uc($tcol);
 
-$e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $ucol`;
+$e_results = `cat $data_dir/Results/full_range_results|grep $ucol`;
 
 if($e_results !~ /$ucol/i){
 	$lcol = lc($tcol);
-	$e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $lcol`;
+	$e_results = `cat $data_dir/Results//full_range_results|grep $lcol`;
 }
 
 @break_year = ();
@@ -1359,7 +1372,7 @@ system("rm pgplot.ps");
 
 open(OUT, ">$out_data");
 
-open(OUT2, ">>$www_dir/full_range_results_temp");
+open(OUT2, ">>$data_dir/Results/full_range_results_temp");
 
 #
 #--- special treatment for HRC I, S, OFF status (for /data/mta4/Deriv/ only);
@@ -1901,11 +1914,11 @@ if($lim_s =~ /both/i){
 	open(OUT, ">$out_data2");
 
 	if($range =~ /f/i){
-		open(OUT2, ">>$www_dir2/full_range_results_temp");
+		open(OUT2, ">>$data_dir/Results/full_range_results_temp");
 	}elsif($range =~ /q/i){
-		open(OUT2, ">>$www_dir2/quarterly_results_temp");
+		open(OUT2, ">>$data_dir/Results/quarterly_results_temp");
 	}elsif($range =~ /w/i){
-		open(OUT2, ">>$www_dir2/weekly_results_temp");
+		open(OUT2, ">>$data_dir/Results/weekly_results_temp");
 	}
 	
 	print OUT "Fitting Reuslts for $msid\n\n";

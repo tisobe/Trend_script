@@ -5,19 +5,36 @@ use PGPLOT;
 #												#
 #	find_limit_plot_long_term_recomp_fit.perl: estimate limit envelope around given data 	#
 #					for a long term data. use saved data. This version	#
-#					computes for each periods, not just the last part.	#
+#					computes for each period, not just the last part.	#
 #												#
 #		data are in dataseeker format	(col names are in  <col>_avg)			#
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Feb 22, 2010							#
+#		last update Jan 27, 2011							#
 #												#
 #################################################################################################
 
 #
 #--- directory setting
 #
+open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+
+@atemp = ();
+while(<FH>){
+        chomp $_;
+        push(@atemp, $_);
+}
+close(FH);
+
+$bin_dir       = $atemp[0];
+$www_dir       = $atemp[1];
+$www_dir2      = $atemp[2];
+$mta_dir       = $atemp[3];
+$save_dir      = $atemp[4];
+$data_dir      = $atemp[5];
+$hosue_keeping = $atemp[6];
+
 
 $www_dir1 = './';
 $www_dir2 = './';
@@ -44,6 +61,8 @@ $out_range    = 0.2;		#--- when calcurate the envelopes, how much sigma out from
 $limit_table1 = "/data/mta/Test/op_limits.db";
 $limit_table2 = "$save_dir/limit_table";
 
+
+$out_range   = 1.0;
 
 
 #------------------------------------------------------------------------------------------------
@@ -72,16 +91,16 @@ $lfits  =~ s/_data\.fits/_min_max\.fits/;
 #
 
 if($lim_s =~ /mta/i){
-	$www_dir     = $www_dir1;
+	$www_dir     = $www_dir;
 	$limit_table = $limit_table1;
 }elsif($lim_s =~ /op/i){
-	$www_dir     = $www_dir2;
+	$www_dir     = $www_dir;
 	$limit_table = $limit_table2;
 }elsif($lim_s =~ /both/i){
-	$www_dir     = $www_dir1;
+	$www_dir     = $www_dir;
 	$limit_table = $limit_table1;
 }else{
-	$www_dir     = $www_dir2;
+	$www_dir     = $www_dir;
 	$limit_table = $limit_table2;
 }
 
@@ -285,10 +304,20 @@ foreach $ent (@in_data){
 	if($atemp[1] =~/\d/){
 		if($atemp[1] =~ /\d/){
 			if($atemp[0] =~ /\d/){
+				if($atemp[1] > 2000.13 && $atemp[1] < 2000.15){		#---- odified 2/3/11
+					next OUTER;
+				}elsif($atemp[1] > 2003.40 && $atemp[1] < 2003.60){
+					next OUTER;
+				}
 				push(@time, $atemp[1]);
 				push(@data, $atemp[2]);
 				$total++;
 			}else{
+				if($atemp[2] > 2000.13 && $atemp[2] < 2000.15){		#---- odified 2/3/11
+					next OUTER;
+				}elsif($atemp[2] > 2003.40 && $atemp[2] < 2003.60){
+					next OUTER;
+				}
 				push(@time, $atemp[2]);
 				push(@data, $atemp[3]);
 				$total++;
@@ -347,7 +376,7 @@ foreach $ent (@in_data){
 #--- this causes a fitting a misbehavior; the data between them
 #--- are excluded from a fitting data_s.
 #
-				if($atemp[1] > 2000.13 && $atemp[1] < 2000.15){
+				if($atemp[1] > 2000.13 && $atemp[1] < 2000.15){			#---- modified 2/3/11
 					next OUTER;
 				}
                         	if($atemp[1] > 2003.40 && $atemp[1] < 2003.60){
@@ -371,7 +400,7 @@ foreach $ent (@in_data){
 			}
 		}else{
 			for($m = $num_break -1; $m >= 0; $m--){
-				if($atemp[1] > 2000.13 && $atemp[1] < 2000.15){
+				if($atemp[2] > 2000.13 && $atemp[2] < 2000.15){
 					next OUTER;
 				}
                         	if($atemp[2] > 2003.40 && $atemp[2] < 2003.60){
@@ -424,11 +453,60 @@ $xtxt  = $xmin + 0.1 * $xdiff;
 #--- setting y plotting range
 #
 
-$ymin  = $rg_min;
-$ymax  = $rg_max;
+@temp = sort{$a<=>$b} @data;				#<--- modified 1/27
+$lbeg  = int(0.0005 * $total);				#<--- modified 2/7 
+if($lbeg < 5){
+	$lbeg = 5;
+}
+
+$cbot = $temp[0];
+$cbcnt = 0;
+OUTER:
+for($k = 1; $k < 0.10 * $total; $k++){
+	if($temp[$k] > $cbot){
+		$cbot = $temp[$k];
+		$cbcnt++;
+		if($cbcnt > $lbeg){
+			last OUTER;
+		}
+	}else{
+		next OUTER;
+	}
+}
+
+
+$ctop = $temp[$total -1];
+$ctcnt = 0;
+OUTER:
+for($k = $total -2; $k >0.90 *$total ; $k--){
+	if($temp[$k] < $ctop){
+		$ctop = $temp[$k];
+		$ctcnt++;
+		if($ctcnt > $lbeg){
+			last OUTER;
+		}
+	}else{
+		next OUTER;
+	}
+}
+
+$ymin  = $cbot;
+$ymax  = $ctop;			#<--- modified 1/27
+
+
+if($rg_min > $ymin){					#---- modified 2/7/11
+	$ymin = $rg_min;
+}
+if($rg_max < $ymax){
+	$ymax = $rg_max;
+}
+
+
+#$ymin  = $rg_min;					
+#$ymax  = $rg_max;
 $ydiff = $ymax - $ymin;
-$ymin -= 0.10 * $ydiff;
-$ymax += 0.10 * $ydiff;
+$ymin -= 0.20 * $ydiff;					#---- modified 2/7/11
+$ymax += 0.20 * $ydiff;					#---- modified 2/7/11
 $ydiff = $ymax - $ymin;
 
 #
@@ -461,6 +539,33 @@ for($i = 0; $i < $total; $i++){
 	pgsci(1);
 }
 
+
+#
+#--- compute weighted moving average for the data
+#
+
+@xtemp = @time;
+@ytemp = @data;
+$tcnt  = $total;
+
+smooth_avg();
+
+#
+#--- plot the moving average points.
+#
+
+
+pgsci(3);
+pgslw(8);
+pgmove($movx[0], $movy[0]);
+for($i = 0; $i < $mtot; $i++){
+	pgdraw($movx[$i], $movy[$i]);
+}
+pgsci(1);
+pgslw(5);
+
+
+
 #
 #---- read previously fitted envelope data
 #
@@ -472,11 +577,11 @@ if($tcol !~ /_avg/i){
 }
 $ucol = uc($tcol);
 
-$e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $ucol`;
+$e_results = `cat $data_dir/Results/full_range_results|grep $ucol`;
 
 if($e_results !~ /$ucol/i){
 	$lcol = lc($tcol);
-	$e_results = `cat /data/mta/www/mta_envelope_trend/full_range_results|grep $lcol`;
+	$e_results = `cat $data_dir/Results/full_range_results|grep $lcol`;
 }
 
 @break_year = ();
@@ -564,11 +669,16 @@ for($pm = 0; $pm < $num_break; $pm++){
 	
 		$sumy_min = 0;
 		$sumy_max = 0;
+		$sumy2_min = 0;						# <---- modified 1/13/11
+		$sumy2_max = 0;						# <---- modified 1/13/11
 		$pmin_min = 1e14;
-		$pmax_min = 1e14;
+		$pmax_min = -1e14;
 		for($j = 0; $j < ${ltotal.$pm}; $j++){
 			$sumy_min += ${min.$pm}[$j];
 			$sumy_max += ${max.$pm}[$j];
+	
+			$sumy2_min += ${min.$pm}[$j] * ${min.$pm}[$j];					# <---- modified 1/13/11
+			$sumy2_max += ${max.$pm}[$j] * ${max.$pm}[$j];					# <---- modified 1/13/11
 	
 			if(${min.$pm}[$j] < $pmin_min){
 				$pmin_min = ${min.$pm}[$j];
@@ -579,6 +689,8 @@ for($pm = 0; $pm < $num_break; $pm++){
 		}
 		$avgy_min = $sumy_min/${ltotal.$pm};
 		$avgy_max = $sumy_max/${ltotal.$pm};
+		$sigy_min = sqrt(abs($sumy2_min/${ltotal.$pm} - $avgy_min * $avgy_min));			# <---- modified 1/13/11
+		$sigy_max = sqrt(abs($sumy2_max/${ltotal.$pm} - $avgy_max * $avgy_max));			# <---- modified 1/13/11
 #
 #--- if the fit is exponential, we do not want any data to be <= 0
 #
@@ -607,9 +719,15 @@ for($pm = 0; $pm < $num_break; $pm++){
 		@adj_y_max = ();
 		for($j = 0; $j < ${ltotal.$pm} ; $j++){
 			$y_temp = ${min.$pm}[$j] - $avgy_min;
+			if(abs($y_temp) > 3.0 * $sigy_min){					# <---- modified 1/13/11
+				$y_temp = 0;							# <---- modified 1/13/11
+			}									# <---- modified 1/13/11
 			push(@adj_y_min, $y_temp);
 	
 			$y_temp = ${max.$pm}[$j] - $avgy_max;
+			if(abs($y_temp) > 3.0 * $sigy_max){					# <---- modified 1/13/11
+				$y_temp = 0;							# <---- modified 1/13/11
+			}									# <---- modified 1/13/11
 			push(@adj_y_max, $y_temp);
 		}
 
@@ -618,12 +736,74 @@ for($pm = 0; $pm < $num_break; $pm++){
 #
 		
 #
+#---- using a box shape moving average, remove outlayers.    1/25/11
+#
+
+$ltot = ${ltotal.$pm};
+@mavg_l = ();
+@mavg_u = ();
+for($k = 0; $k < $ltot; $k++){
+	$asum1 = 0;
+	$asum2 = 0;
+	$ssum1 = 0;
+	$ssum2 = 0;
+	$kt    = $k;
+	if($kt < 2){
+		$kt = 2;
+	}elsif($kt > $ltot - 3){
+		$kt = $ltot - 3;
+	}
+	for($m = $kt - 2; $m < $kt + 3; $m++){
+		$asum1 += $adj_y_min[$m];
+		$asum2 += $adj_y_max[$m];
+		$ssum1 += $adj_y_min[$m] * $adj_y_min[$m];
+		$ssum2 += $adj_y_max[$m] * $adj_y_max[$m];
+	}
+	$avg1 = $asum1/5;
+	$sig1 = sqrt(abs($ssum1/5 - $avg1 * $avg1));
+	$avg2 = $asum2/5;
+	$sig1 = sqrt(abs($ssum2/5 - $avg2 * $avg2));
+
+	$bot1 = $avg1 - 2 * $sig1;
+	$top1 = $avg1 + 1 * $sig1;
+	$bot2 = $avg2 - 1 * $sig2;
+	$top2 = $avg2 + 2 * $sig2;
+
+	$asum1 = 0;
+	$asum2 = 0;
+	$cnt1  = 0;
+	$cnt2  = 0;
+	for($m = $kt - 2; $m < $kt + 3; $m++){
+#		if($adj_y_min[$m] <= $avg11){
+		if($adj_y_min[$m] >= $bot1 && $adj_y_min[$m] <= $top1){
+			$asum1 += $adj_y_min[$m];
+			$cnt1++;
+		}
+#		if($adj_y_max[$m] >= $avg2){
+		if($adj_y_max[$m] >= $bot2 && $adj_y_max[$m] <= $top2){
+			$asum2 += $adj_y_max[$m];
+			$cnt2++;
+		}
+	}
+
+	if($cnt1 > 0){
+		$avg1 = $asum1/$cnt1;
+	}
+	push(@mavg_l, $avg1);
+	if($cnt2 > 0){
+		$avg2 = $asum2/$cnt2;
+	}
+	push(@mavg_u, $avg2);
+}
+
+#
 #--- lower envelope
 #
 		
 		if($nterms =~ /e/i){
 			@x_in = @adj_x;
-			@y_in = @adj_y_min;
+#			@y_in = @adj_y_min;
+			@y_in = @mavg_l;
 			$ctot = ${ltotal.$pm};
 	
 			change_to_log_and_fit();	#--- this change data into log, and fit a straight line
@@ -634,7 +814,8 @@ for($pm = 0; $pm < $num_break; $pm++){
 			}
 		}elsif($nterms =~ /s/i){
 			@input_x = @adj_x;
-			@input_y = @adj_y_min;
+#			@input_y = @adj_y_min;
+			@input_y = @mavg_l;
 			$input_total = ${ltotal.$pm};
 	
 			find_sine_curve();
@@ -653,7 +834,8 @@ for($pm = 0; $pm < $num_break; $pm++){
 			}
 		}else{
 			@x_in = @adj_x;
-			@y_in = @adj_y_min;
+#			@y_in = @adj_y_min;
+			@y_in = @mavg_l;
 			$npts = ${ltotal.$pm};
 			$pmode = 0;
 	
@@ -668,10 +850,12 @@ for($pm = 0; $pm < $num_break; $pm++){
 #
 #---- upper envelope
 #
+
 		
 		if($nterms =~ /e/i){
 			@x_in = @adj_x;
-			@y_in = @adj_y_max;
+#			@y_in = @adj_y_max;
+			@y_in = @mavg_u;
 			$ctot = ${ltotal.$pm};
 	
 			change_to_log_and_fit();
@@ -682,7 +866,8 @@ for($pm = 0; $pm < $num_break; $pm++){
 			}
 		}elsif($nterms =~ /s/i){
 			@input_x = @adj_x;
-			@input_y = @adj_y_max;
+#			@input_y = @adj_y_max;
+			@input_y = @mavg_u;
 			$input_total = ${ltotal.$pm};
 	
 			find_sine_curve();
@@ -701,7 +886,8 @@ for($pm = 0; $pm < $num_break; $pm++){
 			}
 		}else{
 			@x_in = @adj_x;
-			@y_in = @adj_y_max;
+#			@y_in = @adj_y_max;
+			@y_in = @mavg_u;
 			$npts = ${ltotal.$pm};
 			$pmode = 0;
 	
@@ -782,30 +968,49 @@ for($pm = 0; $pm < $num_break; $pm++){
 #
 		@x_in = ();
 		@y_in = ();
+		@diff = ();
 		$npts = 0;
-		for($j = 0; $j < ${ltotal.$pm}; $j++){
+
+		$no_chk = int(0.3 *  ${ltotal.$pm});							#<--- modified
+		$nlim   = $out_range;							#<--- modified
+		$lchk   = 0;
+		WOUTER:							#<--- modified
+		while($npts < $no_chk){							#<--- modified
+			for($j = 0; $j < ${ltotal.$pm}; $j++){
 	
-			if($nterms =~ /e/i){
-				for($n = 0; $n < 3; $n++){
-					$a[$n] = ${p_min.$n};
+				if($nterms =~ /e/i){
+					for($n = 0; $n < 3; $n++){
+						$a[$n] = ${p_min.$n};
+					}
+					$y_est = exp_func($adj_x[$j]);
+				}elsif($nterms =~ /s/i){
+					$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
+							${p_min.3},${p_min.4},${p_min.5},
+								${p_min.6},${p_min.7},$adj_x[$j]);
+				}else{
+					$y_est = 0;
+					for($n = 0; $n <= $nterms; $n++){
+						$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+					}
 				}
-				$y_est = exp_func($adj_x[$j]);
-			}elsif($nterms =~ /s/i){
-				$y_est = sine_model(${p_min.0},${p_min.1},${p_min.2},
-						${p_min.3},${p_min.4},${p_min.5},
-							${p_min.6},${p_min.7},$adj_x[$j]);
-			}else{
-				$y_est = 0;
-				for($n = 0; $n <= $nterms; $n++){
-					$y_est += ${p_min.$n} * power($adj_x[$j], $n);
+				$plim  = $y_est  - $nlim * $pmin_sig;
+				$plim2 = $y_est  - 1.5 * $out_range * $pmax_sig;				#<--- modified
+				if($adj_y_min[$j] <  $plim){
+					push(@x_in, $adj_x[$j]);
+					push(@y_in, $adj_y_min[$j]);
+					$sa = $adj_y_min[$j] - $plim;				#<--- modified
+					push(@diff, $sa);				#<--- modified
+					$npts++;
 				}
 			}
-			$plim  = $y_est  - $out_range * $pmin_sig;
-			if($adj_y_min[$j] <  $plim){
-				push(@x_in, $adj_x[$j]);
-				push(@y_in, $adj_y_min[$j]);
-				$npts++;
+			$nlim *= 0.8;							#<--- modified
+			$lchk++;
+			if($lchk > 10){
+				last WOUTER;
 			}
+			if($npts >= $no_chk){							#<--- modified
+				last WOUTER;							#<--- modified
+			}							#<--- modified
 		}
 
 #
@@ -847,6 +1052,26 @@ for($pm = 0; $pm < $num_break; $pm++){
 					${p_min.$n.$pm} = ${p_min.$n};
 				}
 			}else{
+				@x_tmp = ();				#<--- modified
+				@y_tmp = ();				#<--- modified
+				$tcnt  = 0;				#<--- modified
+
+				$b_cut = int(0.10 * $npts);				#<--- modified
+				$t_cut = $npts - $b_cut;				#<--- modified
+				@temp  = sort{$a<=>$b} @diff;				#<--- modified
+				$bthresh = $temp[$b_cut];				#<--- modified
+				$tthresh = $temp[$t_cut];				#<--- modified
+				for($j = 0; $j < $npts; $j++){				#<--- modified
+					if($diff[$j] >= $bthresh && $diff[$j] <= $tthresh){		#<--- modified
+						push(@x_tmp, $x_in[$j]);				#<--- modified
+						push(@y_tmp, $y_in[$j]);				#<--- modified
+						$tcnt++;						#<--- modified
+					}								#<--- modified
+				}									#<--- modified
+
+				@x_in = @x_tmp;								#<--- modified
+				@y_in = @y_tmp;								#<--- modified
+				$npts = $tcnt;								#<--- modified
 				svdfit($npts, $nterms);
 	
 				for($n = 0; $n <= $nterms; $n++){
@@ -860,29 +1085,47 @@ for($pm = 0; $pm < $num_break; $pm++){
 #
 		@x_in = ();
 		@y_in = ();
+		@diff = ();				#<--- modified
 		$npts = 0;
-		for($j = 0; $j < ${ltotal.$pm}; $j++){
-			if($nterms =~ /e/i){
-				for($n = 0; $n < 3; $n++){
-					$a[$n] = ${p_max.$n};
+
+		$no_chk = int(0.3 *  ${ltotal.$pm});
+		$nlim   = $out_range;
+		$lchk   = 0;
+		WOUTER:
+		while($npts < $no_chk){
+			for($j = 0; $j < ${ltotal.$pm}; $j++){
+				if($nterms =~ /e/i){
+					for($n = 0; $n < 3; $n++){
+						$a[$n] = ${p_max.$n};
+					}
+					$y_est = exp_func($adj_x[$j]);
+				}elsif($nterms =~ /s/i){
+					$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
+							${p_max.3},${p_max.4},${p_max.5},
+								${p_max.6},${p_max.7},$adj_x[$j]);
+				}else{
+					$y_est = 0;
+					for($n = 0; $n <= $nterms; $n++){
+						$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+					}
 				}
-				$y_est = exp_func($adj_x[$j]);
-			}elsif($nterms =~ /s/i){
-				$y_est = sine_model(${p_max.0},${p_max.1},${p_max.2},
-						${p_max.3},${p_max.4},${p_max.5},
-							${p_max.6},${p_max.7},$adj_x[$j]);
-			}else{
-				$y_est = 0;
-				for($n = 0; $n <= $nterms; $n++){
-					$y_est += ${p_max.$n} * power($adj_x[$j], $n);
+
+				$plim  = $y_est  + $nlim * $pmax_sig;
+				if($adj_y_max[$j] >  $plim){			#<--- modified
+					push(@x_in, $adj_x[$j]);
+					push(@y_in, $adj_y_max[$j]);
+					$sa = $adj_y_max[$j] - $plim;		#<--- modified
+					push(@diff, $sa);			#<--- modified
+					$npts++;
 				}
 			}
-			$plim  = $y_est  + $out_range * $pmax_sig;
-	
-			if($adj_y_max[$j] >  $plim){
-				push(@x_in, $adj_x[$j]);
-				push(@y_in, $adj_y_max[$j]);
-				$npts++;
+			$nlim *= 0.8;
+			$lchk++;
+			if($lchk > 10){
+				last WOUTER;
+			}
+			if($npts >= $no_chk){
+				last WOUTER;
 			}
 		}
 	
@@ -915,6 +1158,27 @@ for($pm = 0; $pm < $num_break; $pm++){
 					${p_max.$n.$pm} = ${p_max.$n};
 				}
 			}else{
+				@x_tmp = ();				#<--- modified
+				@y_tmp = ();				#<--- modified
+				$tcnt  = 0;				#<--- modified
+
+				$b_cut = int(0.10 * $npts);				#<--- modified
+				$t_cut = $npts - $b_cut;				#<--- modified
+				@temp  = sort{$a<=>$b} @diff;				#<--- modified
+				$bthresh = $temp[$b_cut];				#<--- modified
+				$tthresh = $temp[$t_cut];				#<--- modified
+				for($j = 0; $j < $npts; $j++){				#<--- modified
+					if($diff[$j] >= $bthresh && $diff[$j] <= $tthresh){		#<--- modified
+						push(@x_tmp, $x_in[$j]);				#<--- modified
+						push(@y_tmp, $y_in[$j]);				#<--- modified
+						$tcnt++;						#<--- modified
+					}								#<--- modified
+				}									#<--- modified
+
+				@x_in = @x_tmp;								#<--- modified
+				@y_in = @y_tmp;								#<--- modified
+				$npts = $tcnt;								#<--- modified
+
 				svdfit($npts, $nterms);
 	
 				for($n = 0; $n <= $nterms; $n++){
@@ -1294,7 +1558,7 @@ system("rm pgplot.ps");
 
 open(OUT, ">$out_data");
 
-open(OUT2, ">>$www_dir/full_range_results_temp");
+open(OUT2, ">>$data_dir/Results/full_range_results_temp");
 
 #
 #--- special treatment for HRC I, S, OFF status (for /data/mta4/Deriv/ only);
@@ -1836,11 +2100,11 @@ if($lim_s =~ /both/i){
 	open(OUT, ">$out_data2");
 
 	if($range =~ /f/i){
-		open(OUT2, ">>$www_dir2/full_range_results_temp");
+		open(OUT2, ">>$data_dir/Results/full_range_results_temp");
 	}elsif($range =~ /q/i){
-		open(OUT2, ">>$www_dir2/quarterly_results_temp");
+		open(OUT2, ">>$data_dir/Results/quarterly_results_temp");
 	}elsif($range =~ /w/i){
-		open(OUT2, ">>$www_dir2/weekly_results_temp");
+		open(OUT2, ">>$data_dir/Results/weekly_results_temp");
 	}
 	
 	print OUT "Fitting Reuslts for $msid\n\n";
@@ -3290,3 +3554,151 @@ sub sine_model{
 
 	return($y_est);
 }
+
+
+
+######################################################################################
+######################################################################################
+######################################################################################
+
+sub smooth_avg{
+	$step = 1/24;
+	@somx = ();
+	@somy = ();
+	$somt = 0;
+
+	$tbeg = $xtemp[0];
+	$tend = $tbeg + $step;
+	@tsum = ();
+	$scnt = 0;
+
+	SOUTER:
+	for($j = 0; $j < $tcnt; $j++){
+		if($xtemp[$j] >= $tbeg && $xtemp[$j] < $tend){
+			if($xtemp[$j] > 2003.40 && $xtemp[$j] < 2003.60){
+				next SOUTER;
+			}
+
+			push(@tsum, $ytemp[$j]);
+			$scnt++;
+		}elsif($xtemp[$j] >= $tend){
+			if($scnt <= 0){
+				$tbeg = $tend;
+				$tend = $tbeg + $step;
+				next SOUTER;
+			}
+			$ibeg  = int(0.05 * $scnt);
+			$iend  = $scnt - $ibeg;
+			@atemp = sort{$a<=>$b} @tsum;
+			$imid  = int($scnt/2);
+			$tavg  = 0;
+			$tadd  = 0;
+			for($l = 0;  $l < $scnt; $l++){
+				if($l <= $ibeg || $l >= $iend){
+					$tavg += $atemp[$imid];
+					$tadd++;
+				}else{
+					if($atemp[$l] > $ymax || $atemp[$l] < $ymin){	#--- added 1/31/2011
+						$tavg += $atemp[$imid];			#--- added 1/31/2011
+						$tadd++;
+					}else{						#--- added 1/31/2011
+						$tavg += $atemp[$l];
+						$tadd++;
+					}
+				}
+			}
+			$tavg = $tavg/$tadd;
+			$tmid = $tbeg + 0.2 * $step;
+			push(@somx, $tmid);
+			push(@somy, $tavg);
+			$somt++;
+			@tsum = ();
+			$scnt = 0;
+			$tbeg = $tend;
+			$tend = $tbeg + $step;
+			$tavg = 0;
+		}elsif($xtemp[$j] < $tbeg){
+			nest SOUTER;
+		}
+	}
+
+
+	@temp = sort{$a<=>$b} @somy;			 	#---- modified 2/8/11
+	$ibeg = int(0.01 * $somt);				#---- modified 2/9/11
+	$diff = $temp[$somt -$ibeg -1] - $temp[$ibeg];		#---- modified 2/9/11
+	if($temp[int(0.5 * $somt)] >0){
+		$ratio= $diff/$temp[int(0.5 * $somt)];			#---- modified 2/8/11
+		if($ratio > 0.000001){			 		#---- modified 2/8/11
+			compute_weighted_moving_average(20);		#---- modified 2/8/11
+		}else{			 				#---- modified 2/8/11
+			@movx = @somx;			 		#---- modified 2/8/11
+			@movy = @somy;			 		#---- modified 2/8/11
+			$mtot = $somt;			 		#---- modified 2/8/11
+		}
+	}else{
+		@movx = @somx;			 		#---- modified 2/8/11
+		@movy = @somy;			 		#---- modified 2/8/11
+		$mtot = $somt;			 		#---- modified 2/8/11
+	}
+}
+
+
+######################################################################################
+######################################################################################
+######################################################################################
+
+sub simple_weighted_moving_avg{
+
+	@movx = ();
+	@movy = ();
+	$mtot = 0;
+
+	for($m = 2; $m < $somt -2; $m++){
+		$tsum = 0.1 * $somy[$m - 2] + 0.2 * $somy[$m - 1] + 0.4 * $somy[$m]
+				+ 0.2 * $somy[$m + 1] + 0.1 * $somy[$m + 2];
+		push(@movx, $somx[$m]);
+		push(@movy, $tsum);
+		$mtot++;
+	}
+}
+
+
+
+######################################################################################
+### compute_weighted_moving_average: compute weighte moving average points         ###
+######################################################################################
+
+sub compute_weighted_moving_average{
+
+	($sample) = @_;
+	$sigm     = 0.1 * $sample;
+	$half_s   = int(0.5 * $sample);
+	$start    = -$half_s;
+	@movx = ();
+	@movy = ();
+	$mtot = 0;
+	for($j = $half_s; $j < $somt - $half_s + 1; $j++){
+		$sumy = 0;
+		for($m = 0; $m < $sample; $m++){
+			$sumy += normal_dist($start + $m, $sigm) * $somy[$j - $half_s + $m];
+		}
+
+		push(@movx, $somx[$j]);
+		push(@movy, $sumy);
+		$mtot++;
+	}
+}
+
+######################################################################################
+#### normal_dist: nromal distribution                                              ###
+######################################################################################
+
+sub normal_dist{
+	my($pos, $sigma, $z, $prob);
+	($pos, $sigma) = @_;
+
+	$z = $pos/$sigma;
+	$prob = (0.3989422804/$sigma) * exp(-0.5 * ($z * $z));
+	return $prob;
+}
+
