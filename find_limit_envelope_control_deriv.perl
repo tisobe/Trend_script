@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Mar 31, 2011						#
+#		last update: Apr 05, 2011						#
 #											#
 #########################################################################################
 
@@ -39,11 +39,14 @@ $file_nam = $btemp[0];
 
 $ldir     = uc($file_nam);
 if($range =~ /w/i){
-	$out_dir = "$www_dir".'Weekly/'."$ldir/";
+	$out_dir  = "$www_dir".'Weekly/'."$ldir/";
+	$out_dir2 = "$data_dir".'Weekly/'."$ldir/";
 }elsif($range =~ /q/i){
-	$out_dir = "$www_dir".'Quarterly/'."$ldir/";
+	$out_dir  = "$www_dir".'Quarterly/'."$ldir/";
+	$out_dir2 = "$data_dir".'Quarterly/'."$ldir/";
 }else{
-	$out_dir = "$www_dir".'Full_range/'."$ldir/";
+	$out_dir  = "$www_dir".'Full_range/'."$ldir/";
+	$out_dir2 = "$data_dir".'Full_range/'."$ldir/";
 }
 
 open(FH, "$save_dir/Break_points/$b_list");
@@ -89,5 +92,5 @@ for($i = 0; $i < $total; $i++){
 	system("/opt/local/bin/perl $bin_dir/find_limit_envelope.perl $fits $col $degree[$i]  $limit  $range mta  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 	system("mv *gif             $out_dir/Plots/");
-	system("mv *fitting_results $data_dir/Results/");
+	system("mv *fitting_results $out_dir2/Results/");
 }
