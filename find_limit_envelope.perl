@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Mar 22, 2011							#
+#		last update Apr 05, 2011							#
 #												#
 #################################################################################################
 
@@ -631,6 +631,31 @@ if($range =~ /f/i){
 		pgpt(1,$time[$i], $data[$i], 1);
 		pgsci(1);
 	}
+
+#
+#--- compute weighted moving average for the data
+#
+
+	@xtemp = @time;
+	@ytemp = @data;
+	$tcnt  = $total;
+	
+	smooth_avg();
+
+#
+#--- plot the moving average points.
+#
+
+
+	pgsci(3);
+	pgslw(8);
+	pgmove($movx[0], $movy[0]);
+	for($i = 0; $i < $mtot; $i++){
+        	pgdraw($movx[$i], $movy[$i]);
+	}
+	pgsci(1);
+	pgslw(5);
+
 }else{
 	pgsch(2);
 	pgslw(10);
@@ -2891,5 +2916,151 @@ sub find_ebar {
 
         $avg = $sum / 100;
         $std = sqrt($sum2/100 - $avg * $avg);
+}
+
+
+######################################################################################
+######################################################################################
+######################################################################################
+
+sub smooth_avg{
+        $step = 1/24;
+        @somx = ();
+        @somy = ();
+        $somt = 0;
+
+        $tbeg = $xtemp[0];
+        $tend = $tbeg + $step;
+        @tsum = ();
+        $scnt = 0;
+
+        SOUTER:
+        for($j = 0; $j < $tcnt; $j++){
+                if($xtemp[$j] >= $tbeg && $xtemp[$j] < $tend){
+                        if($xtemp[$j] > 2003.40 && $xtemp[$j] < 2003.60){
+                                next SOUTER;
+                        }
+
+                        push(@tsum, $ytemp[$j]);
+                        $scnt++;
+                }elsif($xtemp[$j] >= $tend){
+                        if($scnt <= 0){
+                                $tbeg = $tend;
+                                $tend = $tbeg + $step;
+                                next SOUTER;
+                        }
+                        $ibeg  = int(0.05 * $scnt);
+                        $iend  = $scnt - $ibeg;
+                        @atemp = sort{$a<=>$b} @tsum;
+                        $imid  = int($scnt/2);
+                        $tavg  = 0;
+                        $tadd  = 0;
+                        for($l = 0;  $l < $scnt; $l++){
+                                if($l <= $ibeg || $l >= $iend){
+                                        $tavg += $atemp[$imid];
+                                        $tadd++;
+                                }else{
+                                        if($atemp[$l] > $ymax || $atemp[$l] < $ymin){   #--- added 1/31/2011
+                                                $tavg += $atemp[$imid];                 #--- added 1/31/2011
+                                                $tadd++;
+                                        }else{                                          #--- added 1/31/2011
+                                                $tavg += $atemp[$l];
+                                                $tadd++;
+                                        }
+                                }
+                        }
+                        $tavg = $tavg/$tadd;
+                        $tmid = $tbeg + 0.2 * $step;
+                        push(@somx, $tmid);
+                        push(@somy, $tavg);
+                        $somt++;
+                        @tsum = ();
+                        $scnt = 0;
+                        $tbeg = $tend;
+                        $tend = $tbeg + $step;
+                        $tavg = 0;
+                }elsif($xtemp[$j] < $tbeg){
+                        nest SOUTER;
+                }
+        }
+
+
+        @temp = sort{$a<=>$b} @somy;                            #---- modified 2/8/11
+        $ibeg = int(0.01 * $somt);                              #---- modified 2/9/11
+        $diff = $temp[$somt -$ibeg -1] - $temp[$ibeg];          #---- modified 2/9/11
+        if($temp[int(0.5 * $somt)] >0){
+                $ratio= $diff/$temp[int(0.5 * $somt)];                  #---- modified 2/8/11
+                if($ratio > 0.000001){                                  #---- modified 2/8/11
+                        compute_weighted_moving_average(20);            #---- modified 2/8/11
+                }else{                                                  #---- modified 2/8/11
+                        @movx = @somx;                                  #---- modified 2/8/11
+                        @movy = @somy;                                  #---- modified 2/8/11
+                        $mtot = $somt;                                  #---- modified 2/8/11
+                }
+        }else{
+                @movx = @somx;                                  #---- modified 2/8/11
+                @movy = @somy;                                  #---- modified 2/8/11
+                $mtot = $somt;                                  #---- modified 2/8/11
+        }
+}
+
+
+######################################################################################
+######################################################################################
+######################################################################################
+
+sub simple_weighted_moving_avg{
+
+        @movx = ();
+        @movy = ();
+        $mtot = 0;
+
+        for($m = 2; $m < $somt -2; $m++){
+                $tsum = 0.1 * $somy[$m - 2] + 0.2 * $somy[$m - 1] + 0.4 * $somy[$m]
+                                + 0.2 * $somy[$m + 1] + 0.1 * $somy[$m + 2];
+                push(@movx, $somx[$m]);
+                push(@movy, $tsum);
+                $mtot++;
+        }
+}
+
+
+
+######################################################################################
+### compute_weighted_moving_average: compute weighte moving average points         ###
+######################################################################################
+
+sub compute_weighted_moving_average{
+
+        ($sample) = @_;
+        $sigm     = 0.1 * $sample;
+        $half_s   = int(0.5 * $sample);
+        $start    = -$half_s;
+        @movx = ();
+        @movy = ();
+        $mtot = 0;
+        for($j = $half_s; $j < $somt - $half_s + 1; $j++){
+                $sumy = 0;
+                for($m = 0; $m < $sample; $m++){
+                        $sumy += normal_dist($start + $m, $sigm) * $somy[$j - $half_s + $m];
+                }
+
+                push(@movx, $somx[$j]);
+                push(@movy, $sumy);
+                $mtot++;
+        }
+}
+
+######################################################################################
+#### normal_dist: nromal distribution                                              ###
+######################################################################################
+
+sub normal_dist{
+        my($pos, $sigma, $z, $prob);
+        ($pos, $sigma) = @_;
+
+        $z = $pos/$sigma;
+        $prob = (0.3989422804/$sigma) * exp(-0.5 * ($z * $z));
+        return $prob;
 }
 
