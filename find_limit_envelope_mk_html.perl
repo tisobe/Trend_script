@@ -665,7 +665,7 @@ print TOP "</table>\n";
 print TOP "</center>\n";
 
 print TOP "<br><hr><br>\n";
-print TOP "Last Update: May 01, 2009<br>\n";
+print TOP "Web Site Last Update: May 01, 2009<br>\n";
 print TOP "If you have questions, contact T. Isobe (<a href='mailto:isobe\@head.cfa.harvard.edu'>";
 print TOP "isobe\@head.cfa.harvard.edu</a>)\n";
 
