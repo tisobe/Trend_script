@@ -2,11 +2,11 @@
 
 #########################################################################################################################
 #															#
-#	repair_full_range.perl: repair damaged full range data file, and fill up the lost data				#
+#	repair_full_range_gap: repair damaged full range data file, and fill up the lost data				#
 #															#
 #		author: tisobe (tisobe@cfa.harvard.edu)									#
 #															#
-#		last update: Jan 23, 2012										#
+#		last update: Jan 30, 2012										#
 #															#
 #########################################################################################################################
 
@@ -49,7 +49,7 @@ $hosue_keeping = $atemp[6];
 #--- these files do not have data (zero), and skip them
 #
 
-@null_ent_list = ('1den0avo_data', '1dep1avo_data', '1dp28avo_data', '1dahhbvo_data', 'deahk31_data');
+#@null_ent_list = ('1den0avo_data', '1dep1avo_data', '1dp28avo_data', '1dahhbvo_data', 'deahk31_data');
 
 
 #
@@ -116,124 +116,128 @@ open(ZOUT, "> $problem_file");
 
 OUTER:
 foreach $ent (@list){
-	foreach $comp (@null_ent_list){
-		if($ent =~ /$comp/){
-			next OUTER;
-		}
-	}
+#	foreach $comp (@null_ent_list){
+#		if($ent =~ /$comp/){
+#			next OUTER;
+#		}
+#	}
+
 #
 #--- find starting date of the file
 #
 	$line = "$ent".'[cols col1]';
-	system("dmstat \"$line\" > zout");
+	system("dmlist \"$line\" opt=data > zout");
 	open(FH, "./zout");
+	$kind = 0;
 	OUTER:
 	while(<FH>){
 		chomp $_;
+		@atemp = split(/\s+/, $_);
+		if($_ =~ /ROW/i || $atemp[1] !~ /\d/){
+			next OUTER;
+		}
+		if($kind == 0){
+			$last_ent = $atemp[2];
+			$kind = 1;
+			next OUTER;
+		}elsif($atemp[0] =~ /\d/){
+			$diff = $atemp[1] - $last_ent;
+			if($diff > 0.082){
+				$kind = 10;
+				last OUTER;
+			}
+			$last_ent = $atemp[1];
+		}else{
+			$diff = $atemp[2] - $last_ent;
+			if($diff > 0.082){
+				$kind = 10;
+				last OUTER;
+			}
+			$last_ent = $atemp[2];
+		}
+	}
+	close(FH);
 #
-#--- look for starting time (min of the col)
+#--- there is a big gap, fill it
 #
 
-		if($_ =~ /min/){
-			@atemp = split(/\s+/, $_);
-#
-#--- if the time found is larger than the checking date, it means the past data is lost
-#
+	if($kind > 1){
 
-			if($atemp[2] > $date_chk){
-#
-#--- keep the record of the deleted data
-#
+##### print "Processing: $ent\n";
 
-				print ZOUT "$ent\n";
-print "$ent\n";
+		$line = "$ent".'[col1=:'."$last_ent".']';
+		system("dmcopy \"$line\" zout.fits clobber=yes");
 
-#
-#--- find a saved file name
-#
-				@btemp = split(/Full_range\//, $ent);
-				$saved = "$data_dir".'/Full_range_save/'."$btemp[1]";
-				$line  = "$saved".'[cols col1]';
-#
-#--- find the last entry time of the save file
-#
-				system("dmstat \"$line\" > zout2");
-				open(IN, "./zout2");
-				OUTER2:
-				while(<IN>){
-					chomp $_;
-					if($_ =~ /max/){
-						@ctemp = split(/\s+/, $_);
-						@dtemp = split(/\./,  $ctemp[2]);
 				
-						$chk   = 4.0 * int(0.25 * $dtemp[0]);
-						if($chk == $dtemp[0]){
-							$base = 366;
-						}else{
-							$base = 366;
-						}
-						$frac = $ctemp[2] - $dtemp[0];
-						$ydate = int($base * $frac);
+		@dtemp = split(/\./,  $last_ent);
+		$chk   = 4.0 * int(0.25 * $dtemp[0]);
+		if($chk == $dtemp[0]){
+			$base = 366;
+		}else{
+			$base = 366;
+		}
+		$frac = $last_ent - $dtemp[0];
+		$ydate = int($base * $frac);
 
-						$start_yd = "$dtemp[0]:$ydate".':00:00:00';
-						$start    = ydate_to_y1998sec($start_yd);
-					}
-				}
-				close(IN);
-				system("rm zout2");
+#
+#--- last entry date
+#
+		$start_yd = "$dtemp[0]:$ydate".':00:00:00';
+		@btemp = split(/Full_range\//, $ent);
+		$saved = "$data_dir".'/Full_range_save/'."$btemp[1]";
+		$line  = "$saved".'[cols col1]';
 #
 #--- extract msid, and set in a correct format for dataseker
 #
-				@btemp = split(/Fits_data\//, $ent);
-				@ctemp = split(/_data/, $btemp[1]);
-				$msid  = lc($ctemp[0]);
-				if($msid =~ /3FAMTRAT/i || $msid =~ /3FAPSAT/i || $msid =~ /3FASEAAT/i
-						|| $msid =~ /3SMOTOC/i || $msid =~ /3SMOTSTL/i || $msid =~ /3TRMTRAT/i){
-						 $name = uc($msid);
-						$col = "$name".'_AVG';
-				 }elsif($msid =~ /^DEA/i){
-						 $name = uc($msid);
-						$col    = "$name".'_avg';
-				}else{
-						$col    = '_'."$msid".'_avg';
-				}
+		@btemp = split(/Fits_data\//, $ent);
+		@ctemp = split(/_data/, $btemp[1]);
+		$msid  = lc($ctemp[0]);
+		if($msid =~ /3FAMTRAT/i || $msid =~ /3FAPSAT/i || $msid =~ /3FASEAAT/i
+				|| $msid =~ /3SMOTOC/i || $msid =~ /3SMOTSTL/i || $msid =~ /3TRMTRAT/i){
+				 $name = uc($msid);
+				$col = "$name".'_AVG';
+		}elsif($msid =~ /^DEA/i){
+				 $name = uc($msid);
+				$col    = "$name".'_avg';
+		}else{
+				$col    = '_'."$msid".'_avg';
+		}
 
 #
 #--- here comes dataseekr
 #
-				$line = "columns=$col timestart=$start_yd timestop=$end_yd";
+		$line = "columns=$col timestart=$start_yd timestop=$end_yd";
+print "Processing: $ent\t $line \n";
 
 
-				system("cp $save_dir/test .");
-				system("dataseeker.pl infile=test outfile=extracted.fits search_crit=\"$line\" ");
+		system("cp $save_dir/test .");
+		system("dataseeker.pl infile=test outfile=extracted.fits search_crit=\"$line\" ");
 
 
 #
 #--- change the time format to hr/day from 5 min interval
 #
 
-				change_to_hr_bin();
+		change_to_hr_bin();
 
-				system("rm extracted.fits");
+		system("rm extracted.fits");
 #
 #--- merge the past data and the date just extracted
 #
 
-				system("dmcopy $saved \"output.txt[opt kernel=text/simple]\" clobber=yes ");
-				system("dmcopy output.txt output.fits clobber=yes");
-				system("dmmerge \"output.fits,  out2.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
-				system("rm output.txt output.fits");
+#		system("dmcopy $saved \"output.txt[opt kernel=text/simple]\" clobber=yes ");
+		system("dmcopy zout.fits  \"output.txt[opt kernel=text/simple]\" clobber=yes ");
+		system("dmcopy output.txt output.fits clobber=yes");
+		system("dmmerge \"output.fits,  out2.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
+		system("rm output.txt output.fits");
 #
 #--- copy the merged data to the database
 #
-				system("mv merged.fits $ent");
+		system("mv merged.fits $ent");
+		system("rm zout.fits  out2.fits zout");
 
-			}
-			next OUTER;
-		}
 	}
-	system("rm zout");
-	close(FH);
+	next OUTER;
 }
 close(ZOUT);
 
@@ -241,8 +245,8 @@ close(ZOUT);
 #--- update save files
 #
 
-system("rm -rf $data_dir/Full_range_save");
-system("cp -r  $data_dir/Full_range  $data_dir/Full_range_save");
+#system("rm -rf $data_dir/Full_range_save");
+system("cp -r  $data_dir/Full_range  $data_dir/Full_range_save_2");
 
 
 $problem_file = 'problem_files_'."$this_year".'_'."$ydate";

@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Apr 05, 2011							#
+#		last update Jan 30, 2012							#
 #												#
 #################################################################################################
 
@@ -53,7 +53,7 @@ $out_range    = 0.2;		#--- when calcurate the envelopes, how much sigma out from
 				#--- from the average position you want to incude in the computation.
 				#--- the larger the vale, far from the average, and wider envelopes.
 
-$limit_table1 = "/data/mta/Test/op_limits.db";
+$limit_table1 = "$hosue_keeping/current_op_limits.db";
 $limit_table2 = "$save_dir/limit_table";
 
 
