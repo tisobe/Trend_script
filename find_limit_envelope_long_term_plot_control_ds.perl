@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Mar 23, 2011						#
+#		last update: Aug 21, 2012						#
 #											#
 #########################################################################################
 
@@ -14,22 +14,14 @@
 #---- directory
 #
 
-open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+open(FH, "/data/mta/Script/Fitting/hosue_keeping_linux/dir_list");
 
-@atemp = ();
 while(<FH>){
-        chomp $_;
-        push(@atemp, $_);
+    chomp $_;
+    @atemp = split(/\s+/, $_);
+    ${$atemp[0]} = $atemp[1];
 }
 close(FH);
-
-$bin_dir       = $atemp[0];
-$www_dir       = $atemp[1];
-$www_dir2      = $atemp[2];
-$mta_dir       = $atemp[3];
-$save_dir      = $atemp[4];
-$data_dir      = $atemp[5];
-$hosue_keeping = $atemp[6];
 
 
 $b_list   = $ARGV[0];	#---- e.g. oba_list
@@ -108,10 +100,10 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col2\n";
-###	system("/opt/local/bin/perl $bin_dir/find_limit_plot_long_term.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+###	system("$op_dir/perl $bin_dir/find_limit_plot_long_term.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 #########################
-	system("/opt/local/bin/perl $bin_dir/find_limit_plot_long_term_recomp_fit.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	system("$op_dir/perl $bin_dir/find_limit_plot_long_term_recomp_fit.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 #########################
 #

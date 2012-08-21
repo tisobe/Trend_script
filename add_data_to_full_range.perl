@@ -6,7 +6,7 @@
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Mar 22, 2011							#
+#		last update Aug 21, 2012							#
 #												#
 #################################################################################################
 
@@ -15,22 +15,15 @@
 #    set a few things before moving to others...
 #
 
-open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
 
-@atemp = ();
 while(<FH>){
-        chomp $_;
-        push(@atemp, $_);
+    chomp $_;
+    @atemp = split(/\s+/, $_);
+    ${$atemp[0]} = $atemp[1];
 }
 close(FH);
 
-$bin_dir       = $atemp[0];
-$www_dir       = $atemp[1];
-$www_dir2      = $atemp[2];
-$mta_dir       = $atemp[3];
-$save_dir      = $atemp[4];
-$data_dir      = $atemp[5];
-$hosue_keeping = $atemp[6];
 
 $box_length = 0.019178082;    #--- box size: a wee in year.
 

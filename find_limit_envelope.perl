@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jan 30, 2012							#
+#		last update Aug 21, 2012							#
 #												#
 #################################################################################################
 
@@ -17,22 +17,14 @@ use PGPLOT;
 #--- directory setting
 #
 
-open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
+open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
 
-@atemp = ();
 while(<FH>){
-        chomp $_;
-        push(@atemp, $_);
+    chomp $_;
+    @atemp = split(/\s+/, $_);
+    ${$atemp[0]} = $atemp[1];
 }
 close(FH);
-
-$bin_dir       = $atemp[0];
-$www_dir       = $atemp[1];
-$www_dir2      = $atemp[2];
-$mta_dir       = $atemp[3];
-$save_dir      = $atemp[4];
-$data_dir      = $atemp[5];
-$hosue_keeping = $atemp[6];
 
 
 #
@@ -1190,7 +1182,7 @@ if($range =~/\q/i || $range =~ /w/i){
 }
 
 pgclos();
-system("echo ''|/opt/local/bin/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
+system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name");
 
 system("rm pgplot.ps");
 
@@ -1641,7 +1633,7 @@ if($lim_s =~ /both/i){
 	}
 	
 	pgclos();
-	system("echo ''|/opt/local/bin/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name2");
+	system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name2");
 	
 	system("rm pgplot.ps");
 
