@@ -8,15 +8,34 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Aug 21, 2012							#
+#		last update Jan 15, 2013							#
 #												#
 #################################################################################################
+
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+OUTER:
+for($i = 0; $i < 100; $i++){
+	if($ARGV[$i] =~ /test/i){
+		$comp_test = 'test';
+		last OUTER;
+	}elsif($ARGV[$i] eq ''){
+		$comp_test = '';
+		last OUTER;
+	}
+}
 
 #
 #--- directory setting
 #
 
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -73,14 +92,21 @@ $range  = 'f';			#--- only for full range data
 #---- find today's year date
 #
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+if($comp_test =~ /test/i){                      #---- the last day of the test data is Jan 13, 2013
+	$uyear     = 113;
+        $today     = 2013;
+	$y_length  = 365;
+        $uyday     = 43;
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
-$today    = $uyear + 1900;
-$y_length = 365;
-$chk      = 4.0 * int(0.25 * $today);
-
-if($chk == $today){
-	$y_length = 366;
+	$today    = $uyear + 1900;
+	$y_length = 365;
+	$chk      = 4.0 * int(0.25 * $today);
+	
+	if($chk == $today){
+		$y_length = 366;
+	}
 }
 
 $today    = $today + $uyday/$y_length;
@@ -218,7 +244,6 @@ foreach $ent (@in_data){
 #
 
 boxed_interval_min_max();
-
 
 #
 #--- print out min and max data

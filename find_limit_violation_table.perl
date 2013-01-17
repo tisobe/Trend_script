@@ -6,15 +6,24 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Aug 21, 2012						#
+#		last update: Jan 15, 2013						#
 #											#
 #########################################################################################
 
+#--- if this is a test case, set comp_test to "test"
+#
+
+$comp_test = $ARGV[1];
+chomp $comp_test;
 
 #
 #---- directory
 #
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -44,16 +53,21 @@ if($lim_slc =~ /mta/){
 #
 #---- find today's year date
 #
-
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
-
-$this_year = $uyear + 1900;
-$ydate     = $uyday + 1;
-$chk       = 4.0 * int (0.25 * $this_year);
-if($chk == $this_year){
-        $y_length = 366;
+if($comp_test =~ /test/i){                      #---- the last day of the test data is Jan 13, 2013
+        $this_year = 2013;
+	$y_length  = 365;
+        $ydate     = 43;
 }else{
-        $y_length = 365;
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+
+	$this_year = $uyear + 1900;
+	$ydate     = $uyday + 1;
+	$chk       = 4.0 * int (0.25 * $this_year);
+	if($chk == $this_year){
+        	$y_length = 366;
+	}else{
+        	$y_length = 365;
+	}
 }
 
 $chk_date  = $this_year + ($ydate + 3)/$y_length;     #---- add a few days to make sure include
@@ -110,36 +124,43 @@ $input =` cat $save_dir/dataseeker_input_list $save_dir/deriv_input_list`;
 @main_list = split(/\s+/, $input);
 
 open(OUT, ">$www_dir/violation_table.html");
-print OUT "<html>\n";
-print OUT "<body>\n";
 
+print OUT "<!DOCTYPE html>\n";
+print OUT "<html>\n";
+print OUT "<head>\n";
+print OUT "<title>Violation Table</title>\n";
+print OUT "<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />\n";
+print OUT "<style type='text/css'>\n";
+print OUT "table{text-align:center;margin-left:auto;margin-right:auto;border-style:solid;border-spacing:8px;border-width:2px;border-collapse:separate}\n";
+print OUT "</style>\n";
 #
 #--- java script header
 #
-        print OUT '<script language="JavaScript">',"\n";
-        print OUT '  function WindowOpener(imgname) {',"\n";
-        print OUT '    msgWindow = open("","displayname","toolbar=no,directories=no,menubar=no,location=no,scrollbars=no,status=no,width=750,height=600,resize=no");',"\n";
-        print OUT '    msgWindow.document.clear();',"\n";
-        print OUT '    msgWindow.document.write("<HTML><TITLE>Trend plot:   "+imgname+"</TITLE>");',"\n";
-        print OUT "    msgWindow.document.write(\"<BODY TEXT='white' BGCOLOR='white'>\");","\n";
-        print OUT "    msgWindow.document.write(\"<IMG SRC='\"+imgname+\"' BORDER=0><P></BODY></HTML>\");","\n";
-        print OUT '    msgWindow.document.close();',"\n";
-        print OUT '    msgWindow.focus();',"\n";
-        print OUT '  }',"\n";
-        print OUT '</script>',"\n";
-        print OUT "\n\n";
+print OUT '<script>',"\n";
+print OUT '  function WindowOpener(imgname) {',"\n";
+print OUT '    msgWindow = open("","displayname","toolbar=no,directories=no,menubar=no,location=no,scrollbars=no,status=no,width=750,height=600,resize=no");',"\n";
+print OUT '    msgWindow.document.clear();',"\n";
+print OUT '    msgWindow.document.write("<html><title>Trend plot:   "+imgname+"</title>");',"\n";
+print OUT "    msgWindow.document.write(\"<body style='color:white;background-color:white'>\");","\n";
+print OUT "    msgWindow.document.write(\"<img src='\"+imgname+\"' border=0></body></html>\");","\n";
+print OUT '    msgWindow.document.close();',"\n";
+print OUT '    msgWindow.focus();',"\n";
+print OUT '  }',"\n";
+print OUT '</script>',"\n";
+print OUT "\n\n";
+print OUT "</head>\n";
 
+print OUT "<body>\n";
 
 print OUT "<h2>Estimated Date of Yellow Limit Violations</h2>\n";
-print OUT "<br>\n";
-print OUT "<p>\n";
+print OUT "<p style='padding-top:10px'>\n";
 print OUT 'Following tables show a potential yellow limit violation date for each msid.',"\n";
 print OUT 'The unit is in Years. If the values are already in the yellow limit, it',"\n";
-print OUT 'is marked by <font color=red>"Already in Violation"</font>.',"\n";
+print OUT 'is marked by <span style="color:red">"Already in Violation"</span>.',"\n";
 print OUT "</p>\n";
 print OUT "<p>\n";
 print OUT 'For the case that  estimated violation date is less than 2 years, it is',"\n";
-print OUT 'also colored in <b><font color=red>RED</font></b>.',"\n";
+print OUT 'also colored in <strong><span style="color:red">RED</span></strong>.',"\n";
 print OUT "</p>\n";
 
 
@@ -174,7 +195,7 @@ foreach $ent (@main_list){
 	if($v_cnt > 0){
 		@dtemp = split(/_list/, $ent);
 		print OUT "<h3>$dtemp[0]</h3>\n";
-		print OUT "<table border=2, cellpadding=2, cellspacing=2>\n";
+		print OUT "<table border=1>\n";
 		print OUT "<tr><th>MSID</th><th>Lower Limit</th><th>(Limit Value)</th>";
 		print OUT "<th>Upper Limit</th><th>(Limit Value)</th></tr>\n";
 
@@ -182,14 +203,14 @@ foreach $ent (@main_list){
 			$bot   = ${data.$msid[$i]}{lower}[0];
 			$top   = ${data.$msid[$i]}{upper}[0];
 			if($bot !~ /\d/){
-				$bot = '&#160';
+				$bot = '&#160;';
 			}elsif($bot < $chk_date){
-				$bot = '<font color=red>Already in Violation</font>';
+				$bot = '<span style="color:red">Already in Violation</span>';
 			}
 			if($top !~ /\d/){
-				$top = '&#160';
+				$top = '&#160;';
 			}elsif($top < $chk_date){
-				$top = '<font color=red>Already in Violation</font>';
+				$top = '<span style="color:red">Already in Violation</span>';
 			}
 			print OUT "<tr>\n";
 			if($msid[$i] =~ /_avg/){
@@ -203,7 +224,7 @@ foreach $ent (@main_list){
 			$h_name = './Full_range/'."$data_dir".'/Plots/'."$plot_name";
 			print OUT "<th><a href=\"javascript:WindowOpener('$h_name')\">$ctemp[0]</a></th>\n";
 			if($bot =~ /\d/ && $bot < $chk_date2){
-				print OUT "<td><b><font color=red>$bot</font></b></td>\n";
+				print OUT "<td><b><span style='color:red'>$bot</span></b></td>\n";
 			}else{
 				print OUT "<td>$bot</td>\n";
 			}
@@ -215,7 +236,7 @@ foreach $ent (@main_list){
 			}
 			print OUT "<td>${limit.$msid_lc}{y_low}[0]</td>\n";
 			if($top =~ /\d/ && $top < $chk_date2){
-				print OUT "<td><b><font color=red>$top</font></b></td>\n";
+				print OUT "<td style='color:red'><strong>$top</strong></td>\n";
 			}else{
 				print OUT "<td>$top</td>\n";
 			}

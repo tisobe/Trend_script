@@ -6,16 +6,26 @@
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Aug 21, 2012							#
+#		last update Jan 15, 2013							#
 #												#
 #################################################################################################
 
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+$comp_test = $ARGV[0];
+chomp $comp_test;
 
 #----------------------------------------------------------------------------------
 #    set a few things before moving to others...
 #
 
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -33,14 +43,20 @@ $box_length = 0.019178082;    #--- box size: a wee in year.
 #---- find today's year date
 #
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
-
-$today    = $uyear + 1900;
-$y_length = 365;
-$chk      = 4.0 * int(0.25 * $today);
-
-if($chk == $today){
+if($comp_test =~ /test/i){			#---- the last day of the test data is Jan 13, 2013
+	$today    = 2013;
 	$y_length = 366;
+	$uyday    = 43;
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+
+	$today    = $uyear + 1900;
+	$y_length = 365;
+	$chk      = 4.0 * int(0.25 * $today);
+
+	if($chk == $today){
+		$y_length = 366;
+	}
 }
 
 $y_date     = $today + $uyday/$y_length;	#----- in format of 2009.0136
@@ -193,10 +209,33 @@ print "MSID: $msid\n";
 		system("dmmerge \"limit1_mod.fits, limit2.fits\" lmerged.fits  outBlock='' columnList='' clobber=yes ");
 	
 		system("gzip merged.fits");
-		system("mv merged.fits.gz $ent");
+#
+#-- for the test case, output will be saved in an different directory from the input directory
+#
+		if($comp_test =~ /test/i){
+			@ctemp = split(/\//, $ent);
+			$ccnt  = 0;
+			foreach (@ctemp){
+				$ccnt++;
+			}
+			$dname = $ctemp[$ccnt -3];
+			$rname = "$dname".'_out';			#----e.g. ACISTEMP_out
+			$out   = $ent;
+			$out  =~ s/$dname/$rname/;			#---- *_data.fits.gz
+
+			$out2  = $f_limit[$tot];
+			$out2 =~ s/$dname/$rname/;			#---- *_min_max.fits.gz
+
+			system("mv merged.fits.gz $out");
 	
-		system("gzip lmerged.fits");
-		system("mv lmerged.fits.gz $f_limit[$tot]");
+			system("gzip lmerged.fits");
+			system("mv lmerged.fits.gz $out2");
+		}else{
+			system("mv merged.fits.gz $ent");
+	
+			system("gzip lmerged.fits");
+			system("mv lmerged.fits.gz $f_limit[$tot]");
+		}
 	
 		system("rm out1.fits out2.fits out1_mod.fits");
 		system("rm limit1.fits limit2.fits limit1_mod.fits");

@@ -6,15 +6,26 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Aug 21, 2012 								#
+#		last update: Jan 15, 2013 								#
 #													#
 #########################################################################################################
+
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+$comp_test = $ARGV[0];
+chomp $comp_test;
 
 #
 #--- directory setting
 #
 
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -60,14 +71,11 @@ close(FH);
 
 open(OUT, ">$www_dir/break_point_master_table.html");
 
-print OUT '<!DOCTYPE     html PUBLIC "-//W3C//DTD XHTML 1.0 strict//EN"',"\n";
-print OUT '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">',"\n";
-print OUT '',"\n";
-print OUT '<html xmlns="http://www.w3.org/1999/xhtml">',"\n";
-print OUT '',"\n";
+print OUT '<!DOCTYPE  html>',"\n";
+print OUT "<html>\n";
 print OUT '<head>',"\n";
 print OUT '     <title>Break Point List</title>',"\n";
-print OUT '     <meta http-equiv="Cntent-Type" content="text/html; charset=utf=8" />',"\n";
+print OUT "     <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />\n";
 print OUT '</head>',"\n";
 print OUT '<body>',"\n";
 print OUT '',"\n";
@@ -83,8 +91,8 @@ print OUT "</p>\n";
 
 print OUT '<br />',"\n";
 
-print OUT '<p>',"\n";
-print OUT '<table border=1 cellpadding=4 cellspacing=4>',"\n";
+print OUT '<div style="padding-top:20px;padding-bottom:20px">',"\n";
+print OUT '<table border=1>',"\n";
 
 print OUT '<tr>',"\n";
 print OUT '<th>Date</th>',"\n";
@@ -100,7 +108,7 @@ for($i = 0; $i < $b_cnt; $i++){
 		if($date_b[$i] == $date_c[$j]){
 			$reason = $cause[$j];
 			if($reason =~ /NA/i){
-				$reason = '&#160';
+				$reason = '&#160;';
 			}
 			last OUTER;
 		}
@@ -109,7 +117,7 @@ for($i = 0; $i < $b_cnt; $i++){
 	print OUT "<td>\n";
 	
 	@system = split(/\s+/, $entry[$i]);
-	print OUT "<table border=0 cellspacing='2' cellpadding='4'>\n";
+	print OUT "<table style='border-width:0px'>\n";
 	$k = 0;
 	foreach $ent (@system){
 		if($k == 0){
@@ -139,10 +147,9 @@ for($i = 0; $i < $b_cnt; $i++){
 }
 
 print OUT "</table>\n";
-print OUT "</p>\n";
-print OUT '<br /> <br />',"\n";
+print OUT "</div>\n";
 
-print OUT '<a href="http://asc.harvard.edu/mta_days/mta_envelope_trend/mta_envelope_trend.html">Back To Main Page</a>',"\n";
+print OUT '<p><a href="http://asc.harvard.edu/mta_days/mta_envelope_trend/mta_envelope_trend.html">Back To Main Page</a></p>',"\n";
 
 print OUT "</body>\n";
 print OUT "</html>\n";

@@ -6,16 +6,25 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Aug 21, 2012						#
+#		last update: Jan 15, 2013						#
 #											#
 #########################################################################################
 
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+$comp_test = $ARGV[1];
+chomp $comp_test;
 
 #
 #---- directory
 #
-
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -89,7 +98,11 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col\n";
-	system("$op_dir/perl $bin_dir/recompute_limit_data.perl $saved_dir/$fitsgz $col 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	if($comp_test =~ /test/i){
+		system("$op_dir/perl $bin_dir/recompute_limit_data.perl $saved_dir/$fitsgz $col 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i] test");
+	}else{
+		system("$op_dir/perl $bin_dir/recompute_limit_data.perl $saved_dir/$fitsgz $col 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	}
 
 	system("mv *_min_max.fits $new_dir/");
 }

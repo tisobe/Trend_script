@@ -10,15 +10,30 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Aug 21, 2012							#
+#		last update Jan 14, 2013							#
 #												#
 #################################################################################################
+
+$comp_test = '';
+OUTER:
+for($i = 0; $i < 100; $i++){
+	if($ARGV[$i] =~ /test/i){
+		$comp_test = 'test';
+		last OUTER;
+	}elsif($ARGV[$i] eq ''){
+		last OUTER;
+	}
+}
 
 #
 #--- directory setting
 #
 
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+        open(FH, "/data/mta/Script/Fitting/hosue_keeping_linux/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -132,14 +147,21 @@ if($fits eq ''  || $fits =~ /-h/i){
 #---- find today's year date
 #
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
-
-$today    = $uyear + 1900;
-$y_length = 365;
-$chk      = 4.0 * int(0.25 * $today);
-
-if($chk == $today){
+if($comp_test =~ /test/i){                      #---- the last day of the test data is Jan 13, 2013
+        $today    = 2013;
 	$y_length = 366;
+        $uydate   = 43;
+	$uyear    = 113;
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+
+	$today    = $uyear + 1900;
+	$y_length = 365;
+	$chk      = 4.0 * int(0.25 * $today);
+
+	if($chk == $today){
+		$y_length = 366;
+	}
 }
 
 $today    = $today + $uyday/$y_length;
@@ -209,6 +231,10 @@ if($msid =~ /^X/i){
 
 $out_name  = "$c_name".'_plot.gif';		#--- plot file name
 $out_data  = "$c_name".'_fitting_results';	#--- fitted result output file name
+
+if($comp_test =~ /test/i){
+	$out_data = "$out_data"."_test";
+}
 
 #
 #---- find lower and upper limits

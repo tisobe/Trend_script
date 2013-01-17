@@ -6,15 +6,34 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Aug 21, 2012						#
+#		last update: Jan 16, 2013						#
 #											#
 #########################################################################################
+
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+OUTER:
+for($i = 0; $i < 100; $i++){
+	if($ARGV[$i] =~ /test/i){
+		$comp_test = 'test';
+		last OUTER;
+	}elsif($ARGV[$i] eq ''){
+		$comp_test = '';
+		last OUTER;
+	}
+}
 
 #
 #---- directory
 #
 
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -23,8 +42,7 @@ while(<FH>){
 }
 close(FH);
 
-
-$b_list   = $ARGV[0];	#---- e.g. oba_list
+$b_list   = $ARGV[0];  	#---- e.g. oba_list
 $limit    = $ARGV[1];	#---- yellow (y) or red (r) limit
 $range    = $ARGV[2];   #---- whether it is full (f), quarterly (q), or week (w)
 $both     = $ARGV[3];	#---- whether you want to create both mta and p009 plots
@@ -32,15 +50,28 @@ $all      = $ARGV[4];	#---- if all, retrieve the entire data from dataseeker
 
 @atemp    = split(/_list/, $b_list);
 $ldir     = uc($atemp[0]);
+#
+#--- if this is a test case, use the different directory for output
+#
+if($comp_test =~ /test/i){
+	$ldir = "$ldir"."_out";
+}
 
 #
 #---- find today's year date
 #
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+if($comp_test =~ /test/i){
+	$uyear = 113;
+	$this_year = 2013;
+	$ydate     = 43;
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
-$this_year    = $uyear + 1900;
-$ydate        = $uyday + 1;
+	$this_year    = $uyear + 1900;
+	$ydate        = $uyday + 1;
+}
+
 if($range =~ /w/i){
 #
 #---- weekly case
@@ -170,6 +201,9 @@ for($i = 0; $i < $total; $i++){
 
 	@atemp     = split(/_list/, $b_list);
 	$ms_dir    = uc (@atemp[0]);
+	if($comp_test =~ /test/i){
+		$ms_dir = "$ms_dir"."_out";
+	}
 	$saved_dir = "$data_dir"."$r_dir/"."$ms_dir/"."Fits_data/";
 	$fits     = "$msid".'.fits';
 	$fitsgz   = "$fits".'.gz';
@@ -187,10 +221,18 @@ for($i = 0; $i < $total; $i++){
 #
 
 print "$col\n";
-	if($b_point1[$i]  >  2000){
-		system("$op_dir/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	if($comp_test =~ /test/i){
+		if($b_point1[$i]  >  2000){
+			system("$op_dir/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i] test");
+		}else{
+			system("$op_dir/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i] test");
+		}
 	}else{
-		system("$op_dir/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+		if($b_point1[$i]  >  2000){
+			system("$op_dir/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both 2000  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+		}else{
+			system("$op_dir/perl $bin_dir/find_limit_envelope.perl merged.fits $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+		}
 	}
 
 	system("gzip -f merged.fits");

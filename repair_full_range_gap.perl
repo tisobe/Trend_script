@@ -6,7 +6,7 @@
 #															#
 #		author: tisobe (tisobe@cfa.harvard.edu)									#
 #															#
-#		last update: Aug 21, 2012										#
+#		last update: Jan 14, 2013										#
 #															#
 #########################################################################################################################
 
@@ -22,11 +22,22 @@
 #	set path = (/home/ascds/DS.release/otsbin/  $path)
 #
 
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+$comp_test = $ARGV[0];
+chomp $comp_test;
+
 #############################################################################################
 #
 #--- set directry
 #
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -47,11 +58,15 @@ close(FH);
 #
 #---- find today's year date
 #
+if($comp_test =~ /test/i){                      #---- the last day of the test data is Jan 13, 2013
+        $this_year = 2013;
+        $ydate     = 43;
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
-
-$this_year    = $uyear + 1900;
-$ydate        = $uyday + 1;
+	$this_year    = $uyear + 1900;
+	$ydate        = $uyday + 1;
+}
 
 #
 #---- check whether data were accidentally deleted or not by setting the checking date 200 days ago
@@ -94,7 +109,11 @@ $end      = ydate_to_y1998sec($end_yd);
 #--- create the list of all full range data
 #
 
-$input =` ls  $data_dir/Full_range/*/Fits_data/*_data.fits`;
+if($comp_test =~ /test/i){
+	$input =` ls  $data_dir/Full_range/*_out/Fits_data/*_data.fits`;
+}else{
+	$input =` ls  $data_dir/Full_range/*/Fits_data/*_data.fits`;
+}
 @list  = split(/\s+/, $input);
 
 #
@@ -238,7 +257,9 @@ close(ZOUT);
 #
 
 #system("rm -rf $data_dir/Full_range_save");
-system("cp -r  $data_dir/Full_range  $data_dir/Full_range_save_2");
+if($comp_test !~ /test/i){
+	system("cp -r  $data_dir/Full_range  $data_dir/Full_range_save_2");
+}
 
 
 $problem_file = 'problem_files_'."$this_year".'_'."$ydate";
@@ -254,7 +275,11 @@ if($cnt_prblem == 0){
 	open(ZOUT, ">temp_mail");
 	print ZOUT  "The following files had problems, and modified\n\n";
 	system("cat $problem_file  |mailx -s\"Subject: Problem found in Envelope Trending\n\" -risobe\@head.cfa.harvard.edu isobe\@head.cfa.harvard.edu");
-	system("mv $problem_file $house_keeping/Problem_lists/.");
+	if($comp_test =~ /test/i){
+		system("mv $problem_file $data_dir/Problem_lists/.");
+	}else{
+		system("mv $problem_file $house_keeping/Problem_lists/.");
+	}
 }
 
 

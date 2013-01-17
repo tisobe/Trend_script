@@ -6,14 +6,33 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Aug 21, 2012						#
+#		last update: Jan 16, 2013						#
 #											#
 #########################################################################################
 
 #
+#--- if this is a test case, set comp_test to "test"
+#
+
+OUTER:
+for($i = 0; $i < 10; $i++){
+	if($ARGV[$i] =~ /test/i){
+		$comp_test = 'test';
+		last OUTER;
+	}elsif($ARGV[$i] eq ''){
+		$comp_test = '';
+		last OUTER;
+	}
+}
+
+#
 #---- directory
 #
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -21,7 +40,6 @@ while(<FH>){
     ${$atemp[0]} = $atemp[1];
     }
 close(FH);
-
 
 $b_list = $ARGV[0];	#---- e.g. oba_list
 $limit  = $ARGV[1];	#---- yellow (y) or red (r) limit
@@ -31,6 +49,13 @@ $range  = $ARGV[2];     #---- whether it is full (f), quarterly (q), or week (w)
 $file_nam = $btemp[0];
 
 $ldir     = uc($file_nam);
+#
+#--- if it is for the test, outputs go to a different directory
+#
+if($comp_test =~ /test/i){
+	$ldir = "$ldir".'_out';
+}
+
 if($range =~ /w/i){
 	$out_dir  = "$www_dir".'Weekly/'."$ldir/";
 	$out_dir2 = "$data_dir".'Weekly/'."$ldir/";
@@ -82,7 +107,11 @@ for($i = 0; $i < $total; $i++){
 	}
 	$fits   = "/data/mta4/Deriv/$file_nam".'.fits';
 
-	system("$op_dir/perl $bin_dir/find_limit_envelope.perl $fits $col $degree[$i]  $limit  $range mta  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	if($comp_test =~ /test/){
+		system("$op_dir/perl $bin_dir/find_limit_envelope.perl  $fits $col $degree[$i]  $limit  $range mta  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i] test");
+	}else{
+		system("$op_dir/perl $bin_dir/find_limit_envelope.perl $fits $col $degree[$i]  $limit  $range mta  $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	}
 
 	system("mv *gif             $out_dir/Plots/");
 	system("mv *fitting_results $out_dir2/Results/");

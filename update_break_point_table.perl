@@ -6,15 +6,26 @@
 #													#
 #		author: t. isobe (tisobe@cfa.harvard.edu)						#
 #													#
-#		last update: Aug21, 2012								#
+#		last update: Jan 15, 2012								#
 #													#
 #########################################################################################################
+
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+$comp_test = $ARGV[0];
+chomp $comp_test;
 
 #
 #--- directory setting
 #
 
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;

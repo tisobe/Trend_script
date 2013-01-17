@@ -6,15 +6,34 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Aug 21, 2012						#
+#		last update: Jan 16, 2013						#
 #											#
 #########################################################################################
+
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+OUTER:
+for($i = 0; $i < 100; $i++){
+	if($ARGV[$i] =~ /test/i){
+		$comp_test = 'test';
+		last OUTER;
+	}elsif($ARGV[$i] eq ''){
+		$comp_test = '';
+		last OUTER;
+	}
+}
 
 #
 #---- directory
 #
 
-open(FH, "/data/mta/Script/Fitting/hosue_keeping_linux/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -23,8 +42,7 @@ while(<FH>){
 }
 close(FH);
 
-
-$b_list   = $ARGV[0];	#---- e.g. oba_list
+$b_list   = $ARGV[0];  	#---- e.g. oba_list
 $limit    = $ARGV[1];	#---- yellow (y) or red (r) limit
 $range    = $ARGV[2];   #---- whether it is full (f), quarterly (q), or week (w)
 $both     = $ARGV[3];	#---- whether you want to create both mta and p009 plots
@@ -32,6 +50,13 @@ $all      = $ARGV[4];	#---- if all, retrieve the entire data from dataseeker
 
 @atemp     = split(/_list/, $b_list);
 $ldir      = uc($atemp[0]);
+#
+#--- if this is a test, use a different directory
+#
+if($comp_test =~ /test/i){
+	$ldir = "$ldir"."_out";
+}
+
 $fdata_dir = "$data_dir/".'Full_range/'."$ldir/".'Fits_data/';
 $rdata_dir = "$data_dir/".'Full_range/'."$ldir/".'Results/';
 
@@ -39,10 +64,15 @@ $rdata_dir = "$data_dir/".'Full_range/'."$ldir/".'Results/';
 #---- find today's year date
 #
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
+if($comp_test =~ /test/i){                      #---- the last day of the test data is Jan 13, 2013
+        $this_year = 2013;
+        $ydate     = 43;
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
-$this_year    = $uyear + 1900;
-$ydate        = $uyday + 1;
+	$this_year    = $uyear + 1900;
+	$ydate        = $uyday + 1;
+}
 
 #
 #--- full range
@@ -103,7 +133,11 @@ print "$col2\n";
 ###	system("$op_dir/perl $bin_dir/find_limit_plot_long_term.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
 
 #########################
-	system("$op_dir/perl $bin_dir/find_limit_plot_long_term_recomp_fit.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	if($comp_test =~ /test/i){
+		system("$op_dir/perl $bin_dir/find_limit_plot_long_term_recomp_fit.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i] test");
+	}else{
+		system("$op_dir/perl $bin_dir/find_limit_plot_long_term_recomp_fit.perl $fits_name  $col2 $degree[$i]  $limit $range $both $b_point1[$i] $b_point2[$i] $b_point3[$i] $b_point4[$i] $b_point5[$i] $b_point6[$i] $b_point7[$i]");
+	}
 
 #########################
 #
@@ -121,7 +155,11 @@ print "$col2\n";
 	}
 	
 	system("mv *gif             $out_dir/Plots/");
-	system("mv *fitting_results $rdata_dir/");
+	if($comp_test =~ /test/i){	
+		system("mv *fitting_results $rdata_dir/");
+	}else{
+		system("mv *fitting_results $rdata_dir/");
+	}
 }
 
 

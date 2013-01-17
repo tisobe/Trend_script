@@ -9,15 +9,34 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Aug 21, 2012							#
+#		last update Jan 16, 2013							#
 #												#
 #################################################################################################
+
+#
+#--- if this is a test case, set comp_test to "test"
+#
+
+OUTER:
+for($i = 0; $i < 100; $i++){
+	if($ARGV[$i] =~ /test/i){
+		$comp_test = 'test';
+		last OUTER;
+	}elsif($ARGV[$i] eq ''){
+		$comp_test = '';
+		last OUTER;
+	}
+}
 
 #
 #--- directory setting
 #
 
-open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+if($comp_test =~ /test/i){
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+}else{
+	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+}
 
 while(<FH>){
     chomp $_;
@@ -55,8 +74,7 @@ $limit_table2 = "$save_dir/limit_table";
 #
 #--- read data file name  etc
 #
-
-$fits   = $ARGV[0];		#--- input fits file, dataseeker format
+$fits   = $ARGV[0];  		#--- input fits file, dataseeker format
 $col    = $ARGV[1];		#--- data column name e.g. oobthr44_avg
 $nterms = $ARGV[2];		#--- degree of polynomial fit, 2 or 3 (linear and quad)
 $lim_c  = $ARGV[3];		#--- operational limit: yellow (y) or red (r) 
@@ -130,15 +148,21 @@ if($fits eq ''  || $fits =~ /-h/i){
 #
 #---- find today's year date
 #
+if($comp_test =~ /test/i){
+	$today    = 2013;
+	$y_length = 365;
+	$uyear    = 113;
+	$uyday    = 43;
+}else{
+	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
-($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
-
-$today    = $uyear + 1900;
-$y_length = 365;
-$chk      = 4.0 * int(0.25 * $today);
-
-if($chk == $today){
-	$y_length = 366;
+	$today    = $uyear + 1900;
+	$y_length = 365;
+	$chk      = 4.0 * int(0.25 * $today);
+	
+	if($chk == $today){
+		$y_length = 366;
+	}
 }
 
 $today    = $today + $uyday/$y_length;
@@ -1182,7 +1206,8 @@ if($range =~/\q/i || $range =~ /w/i){
 }
 
 pgclos();
-system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name");
+###system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name");
+system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
 
 system("rm pgplot.ps");
 
@@ -1633,7 +1658,8 @@ if($lim_s =~ /both/i){
 	}
 	
 	pgclos();
-	system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name2");
+###system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name");
+	system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name2");
 	
 	system("rm pgplot.ps");
 
