@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env /usr/local/bin/perl
 use PGPLOT;
 
 #################################################################################################
@@ -9,7 +9,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jan 16, 2013							#
+#		last update Jun 05, 2013							#
 #												#
 #################################################################################################
 
@@ -33,9 +33,9 @@ for($i = 0; $i < 100; $i++){
 #
 
 if($comp_test =~ /test/i){
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list_test");
 }else{
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 }
 
 while(<FH>){
@@ -304,7 +304,6 @@ $line = "$fits".'[cols time,'."$col".']';
 
 $in_line = `dmlist \"$line\" opt=data`;
 @in_data = split(/\n/, $in_line);
-
 
 #
 #--- read data; convert the time to fraction of year
@@ -647,7 +646,6 @@ if($range =~ /f/i){
 		pgpt(1,$time[$i], $data[$i], 1);
 		pgsci(1);
 	}
-
 #
 #--- compute weighted moving average for the data
 #
@@ -1207,9 +1205,9 @@ if($range =~/\q/i || $range =~ /w/i){
 
 pgclos();
 ###system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name");
-system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
+system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmflip -r270 |ppmtogif > $out_name");
 
-system("rm pgplot.ps");
+system("rm -rf pgplot.ps");
 
 
 
@@ -1659,9 +1657,9 @@ if($lim_s =~ /both/i){
 	
 	pgclos();
 ###system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name");
-	system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name2");
+	system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmflip -r270 |ppmtogif > $out_name2");
 	
-	system("rm pgplot.ps");
+	system("rm -rf pgplot.ps");
 
 
 
@@ -2261,62 +2259,67 @@ sub svdfit{
 #
 #----- this code was taken from Numerical Recipes. the original is FORTRAN
 #
-
         $tol = 1.e-5;
 
         my($ndata, $ma, @x, @y, @sig);
         ($ndata, $ma) = @_;
-        for($i = 0; $i < $ndata; $i++){
-                $j = $i + 1;
-                $x[$j] = $x_in[$i];
-                $y[$j] = $y_in[$i];
-                $sig[$j] = $sigmay[$i];
+        if ($ndata > 4 * $ma){
+            for($i = 0; $i < $ndata; $i++){
+                    $j = $i + 1;
+                    $x[$j] = $x_in[$i];
+                    $y[$j] = $y_in[$i];
+                    $sig[$j] = $sigmay[$i];
         }
 #
 #---- accumulate coefficients of the fitting matrix
 #
-        for($i = 1; $i <= $ndata; $i++){
-                funcs($x[$i], $ma);
-                if($mode == 0){
-                        $tmp = 1.0;
-                        $sig[$i] = 1.0;
-                }else{
-                        $tmp = 1.0/$sig[$i];
-                }
-                for($j = 1; $j <= $ma; $j++){
-                        $u[$i][$j] = $afunc[$j] * $tmp;
-                }
-                $b[$i] = $y[$i] * $tmp;
-        }
+            for($i = 1; $i <= $ndata; $i++){
+                    funcs($x[$i], $ma);
+                    if($mode == 0){
+                            $tmp = 1.0;
+                            $sig[$i] = 1.0;
+                    }else{
+                            $tmp = 1.0/$sig[$i];
+                    }
+                    for($j = 1; $j <= $ma; $j++){
+                            $u[$i][$j] = $afunc[$j] * $tmp;
+                    }
+                    $b[$i] = $y[$i] * $tmp;
+            }
 #
 #---- singular value decompostion sub
 #
-        svdcmp($ndata, $ma);            ###### this also need $u[$i][$j] and $b[$i]
+            svdcmp($ndata, $ma);            ###### this also need $u[$i][$j] and $b[$i]
 #
 #---- edit the singular values, given tol from the parameter statements
 #
-        $wmax = 0.0;
-        for($j = 1; $j <= $ma; $j++){
-                if($w[$j] > $wmax) {$wmax = $w[$j]}
-        }
-        $thresh = $tol * $wmax;
-        for($j = 1; $j <= $ma; $j++){
-                if($w[$j] < $thresh){$w[$j] = 0.0}
-        }
-
-        svbksb($ndata, $ma);            ###### this also needs b, u, v, w. output is a[$j]
+            $wmax = 0.0;
+            for($j = 1; $j <= $ma; $j++){
+                    if($w[$j] > $wmax) {$wmax = $w[$j]}
+            }
+            $thresh = $tol * $wmax;
+            for($j = 1; $j <= $ma; $j++){
+                    if($w[$j] < $thresh){$w[$j] = 0.0}
+            }
+    
+            svbksb($ndata, $ma);            ###### this also needs b, u, v, w. output is a[$j]
 #
 #---- evaluate chisq
 #
-        $chisq = 0.0;
-        for($i = 1; $i <= $ndata; $i++){
-                funcs($x[$i], $ma);
-                $sum = 0.0;
-                for($j = 1; $j <= $ma; $j++){
-                        $sum  += $a[$j] * $afunc[$j];
-                }
-                $diff = ($y[$i] - $sum)/$sig[$i];
-                $chisq +=  $diff * $diff;
+            $chisq = 0.0;
+            for($i = 1; $i <= $ndata; $i++){
+                    funcs($x[$i], $ma);
+                    $sum = 0.0;
+                    for($j = 1; $j <= $ma; $j++){
+                            $sum  += $a[$j] * $afunc[$j];
+                    }
+                    $diff = ($y[$i] - $sum)/$sig[$i];
+                    $chisq +=  $diff * $diff;
+            }
+        }else{
+            for ($i = 0; $i < $ma; $i++){
+                $a[$i] = 0;
+            }
         }
 }
 

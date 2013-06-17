@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env /usr/local/bin/perl
 
 #################################################################################################
 #												#
@@ -6,7 +6,7 @@
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jan 15, 2013							#
+#		last update Jun 05, 2013							#
 #												#
 #################################################################################################
 
@@ -22,9 +22,9 @@ chomp $comp_test;
 #
 
 if($comp_test =~ /test/i){
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list_test");
 }else{
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 }
 
 while(<FH>){
@@ -47,6 +47,14 @@ if($comp_test =~ /test/i){			#---- the last day of the test data is Jan 13, 2013
 	$today    = 2013;
 	$y_length = 366;
 	$uyday    = 43;
+
+	$test = `ls /data/mta/Script/Fitting/*`;
+	if($test =~ /Test_out/){
+		system("rm -rf /data/mta/Script/Fitting/Test_out");
+	}
+
+	system("cp -r $house_keeping/Test_prep /data/mta/Script/Fitting/Test_out");	 #---- test output directory
+
 }else{
 	($usec, $umin, $uhour, $umday, $umon, $uyear, $uwday, $uyday, $uisdst)= localtime(time);
 
@@ -182,7 +190,7 @@ print "MSID: $msid\n";
 		close(OUT);
 		close(FH);
 		system("dmcopy temp_out out1_mod.fits");
-		system("rm temp_out");
+		system("rm -rf temp_out");
 
 		system("dmlist limit1.fits opt=data > temp");
 		open(FH, "temp");
@@ -203,7 +211,7 @@ print "MSID: $msid\n";
 		close(OUT);
 		close(FH);
 		system("dmcopy temp_out limit1_mod.fits");
-		system("rm temp_out");
+		system("rm -rf temp_out");
 
 		system("dmmerge \"out1_mod.fits,   out2.fits\"    merged.fits  outBlock='' columnList='' clobber=yes ");
 		system("dmmerge \"limit1_mod.fits, limit2.fits\" lmerged.fits  outBlock='' columnList='' clobber=yes ");
@@ -237,8 +245,8 @@ print "MSID: $msid\n";
 			system("mv lmerged.fits.gz $f_limit[$tot]");
 		}
 	
-		system("rm out1.fits out2.fits out1_mod.fits");
-		system("rm limit1.fits limit2.fits limit1_mod.fits");
+		system("rm -rf out1.fits out2.fits out1_mod.fits");
+		system("rm -rf limit1.fits limit2.fits limit1_mod.fits");
 	}
 	$tot++;
 }
@@ -400,7 +408,7 @@ sub change_to_hr_bin{
 		}
 		close(OUT);
 		system("dmcopy  out_file out2.fits clobber=yes");
-		system("rm out_file");
+		system("rm -rf out_file");
 #
 #---- now find min and max
 #
@@ -423,7 +431,7 @@ sub change_to_hr_bin{
 		}
 		close(OUT);
 		system("dmcopy  out_file limit2.fits clobber=yes");
-		system("rm out_file");
+		system("rm -rf out_file");
 	}
 }
 

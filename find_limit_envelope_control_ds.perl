@@ -1,4 +1,4 @@
-#/opt/local/bin/perl
+#!/usr/bin/env /usr/local/bin/perl
 
 #########################################################################################
 #											#
@@ -6,7 +6,7 @@
 #											#
 #		author: t. isobe (tisobe@cfa.harvard.edu)				#
 #											#
-#		last update: Jan 16, 2013						#
+#		last update: Jun 05, 2013						#
 #											#
 #########################################################################################
 
@@ -30,9 +30,9 @@ for($i = 0; $i < 100; $i++){
 #
 
 if($comp_test =~ /test/i){
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list_test");
 }else{
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 }
 
 while(<FH>){
@@ -214,7 +214,7 @@ for($i = 0; $i < $total; $i++){
 
 	$line = "columns=$col timestart=$start timestop=$end";
 
-	system("dataseeker.pl infile=test outfile=merged.fits search_crit=\"$line\" ");
+	system("dataseeker.pl infile=test outfile=merged.fits search_crit=\"$line\" loginFile=$house_keeping/loginfile ");
 
 #
 #---- now call the script actually plots the data

@@ -1,5 +1,4 @@
-#!/opt/local/bin/perl
-use PGPLOT;
+#!/usr/bin/env /usr/local/bin/perl
 
 #################################################################################################
 #												#
@@ -8,7 +7,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jan 15, 2013							#
+#		last update Jun 05, 2013							#
 #												#
 #################################################################################################
 
@@ -32,9 +31,9 @@ for($i = 0; $i < 100; $i++){
 #
 
 if($comp_test =~ /test/i){
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list_test");
 }else{
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 }
 
 while(<FH>){
@@ -261,7 +260,7 @@ for($k = 0; $k < $num_break; $k++){
 close(OUT);
 
 system("dmcopy  infile=data_temp outfile=$min_max_file clobber=yes");
-system("rm data_temp");
+system("rm -rf data_temp");
 
 
 

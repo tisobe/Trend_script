@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env /usr/local/bin/perl
 
 #########################################################################################################################
 #															#
@@ -6,7 +6,7 @@
 #															#
 #		author: tisobe (tisobe@cfa.harvard.edu)									#
 #															#
-#		last update: Jan 14, 2013										#
+#		last update: Jun 05, 2013										#
 #															#
 #########################################################################################################################
 
@@ -34,9 +34,9 @@ chomp $comp_test;
 #--- set directry
 #
 if($comp_test =~ /test/i){
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list_test");
 }else{
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 }
 
 while(<FH>){
@@ -231,7 +231,7 @@ print "Processing: $ent\t $line \n";
 
 		change_to_hr_bin();
 
-		system("rm extracted.fits");
+		system("rm -rf extracted.fits");
 #
 #--- merge the past data and the date just extracted
 #
@@ -240,12 +240,12 @@ print "Processing: $ent\t $line \n";
 		system("dmcopy zout.fits  \"output.txt[opt kernel=text/simple]\" clobber=yes ");
 		system("dmcopy output.txt output.fits clobber=yes");
 		system("dmmerge \"output.fits,  out2.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
-		system("rm output.txt output.fits");
+		system("rm -rf output.txt output.fits");
 #
 #--- copy the merged data to the database
 #
 		system("mv merged.fits $ent");
-		system("rm zout.fits  out2.fits zout");
+		system("rm -rf zout.fits  out2.fits zout");
 
 	}
 	next OUTER;
@@ -270,7 +270,7 @@ $cnt_problem  = 0;
 #
 
 if($cnt_prblem == 0){
-	system("rm $problem_file");
+	system("rm -rf $problem_file");
 }else{
 	open(ZOUT, ">temp_mail");
 	print ZOUT  "The following files had problems, and modified\n\n";
@@ -551,7 +551,7 @@ sub change_to_hr_bin{
                 }
                 close(OUT);
                 system("dmcopy  out_file out2.fits clobber=yes");
-                system("rm out_file");
+                system("rm -rf out_file");
         }
 }
 

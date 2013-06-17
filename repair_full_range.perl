@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/env /usr/local/bin/perl
 
 #########################################################################################################################
 #															#
@@ -6,7 +6,7 @@
 #															#
 #		author: tisobe (tisobe@cfa.harvard.edu)									#
 #															#
-#		last update: Jan 15, 2013										#
+#		last update: Jun 05, 2013										#
 #															#
 #########################################################################################################################
 
@@ -34,9 +34,9 @@ chomp $comp_test;
 #--- set directry
 #
 if($comp_test =~ /test/i){
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list_test");
 }else{
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 }
 
 while(<FH>){
@@ -188,7 +188,7 @@ print "$ent\n";
 					}
 				}
 				close(IN);
-				system("rm zout2");
+				system("rm -rf zout2");
 #
 #--- extract msid, and set in a correct format for dataseker
 #
@@ -222,7 +222,7 @@ print "$ent\n";
 
 				change_to_hr_bin();
 
-				system("rm extracted.fits");
+				system("rm -rf extracted.fits");
 #
 #--- merge the past data and the date just extracted
 #
@@ -230,7 +230,7 @@ print "$ent\n";
 				system("dmcopy $saved \"output.txt[opt kernel=text/simple]\" clobber=yes ");
 				system("dmcopy output.txt output.fits clobber=yes");
 				system("dmmerge \"output.fits,  out2.fits\" merged.fits outBlock='' columnList='' clobber=yes ");
-				system("rm output.txt output.fits");
+				system("rm -rf output.txt output.fits");
 #
 #--- copy the merged data to the database
 #
@@ -240,7 +240,7 @@ print "$ent\n";
 			next OUTER;
 		}
 	}
-	system("rm zout");
+	system("rm -rf zout");
 	close(FH);
 }
 close(ZOUT);
@@ -266,7 +266,7 @@ $cnt_problem  = 0;
 #
 
 if($cnt_prblem == 0){
-	system("rm $problem_file");
+	system("rm -rf $problem_file");
 }else{
 	open(ZOUT, ">temp_mail");
 	print ZOUT  "The following files had problems, and modified\n\n";
@@ -547,7 +547,7 @@ sub change_to_hr_bin{
                 }
                 close(OUT);
                 system("dmcopy  out_file out2.fits clobber=yes");
-                system("rm out_file");
+                system("rm -rf out_file");
         }
 }
 

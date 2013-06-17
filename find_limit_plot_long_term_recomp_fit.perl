@@ -1,4 +1,4 @@
-#!/opt/local/bin/perl
+#!/usr/bin/env /usr/local/bin/perl
 use PGPLOT;
 
 #################################################################################################
@@ -11,7 +11,7 @@ use PGPLOT;
 #												#
 #		author: t. isobe (tisobe@cfa.harvard.edu)					#
 #												#
-#		last update Jan 16, 2013							#
+#		last update Jun 05, 2013							#
 #												#
 #################################################################################################
 
@@ -30,9 +30,9 @@ for($i = 0; $i < 100; $i++){
 #--- directory setting
 #
 if($comp_test =~ /test/i){
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list_test");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list_test");
 }else{
-	open(FH, "/data/mta/Script/Fitting_linux/hosue_keeping/dir_list");
+	open(FH, "/data/mta/Script/Fitting/hosue_keeping/dir_list");
 }
 
 while(<FH>){
@@ -45,7 +45,7 @@ close(FH);
 
 ###$www_dir1 = './';
 ###$www_dir2 = './';
-###$save_dir = '/data/mta/Script/Fitting_linux/Trend_script/Save_data/';
+###$save_dir = '/data/mta/Script/Fitting/Trend_script/Save_data/';
 
 #
 #--- setting:
@@ -1559,9 +1559,9 @@ pglabel("Time (Year)", "$col_name", "");
 
 pgclos();
 #system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name");
-system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name");
+system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmflip -r270 |ppmtogif > $out_name");
 
-system("rm pgplot.ps");
+system("rm -rf pgplot.ps");
 
 
 
@@ -2101,9 +2101,9 @@ if($lim_s =~ /both/i){
 	
 	pgclos();
 #	system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|$op_dir/pnmcrop|$op_dir/pnmflip -r270 |$op_dir/ppmtogif > $out_name2");
-	system("echo ''|$op_dir/gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmcrop|pnmflip -r270 |ppmtogif > $out_name2");
+	system("echo ''|gs -sDEVICE=ppmraw  -r64x64 -q -NOPAUSE -sOutputFile=-  ./pgplot.ps|pnmflip -r270 |ppmtogif > $out_name2");
 	
-	system("rm pgplot.ps");
+	system("rm -rf pgplot.ps");
 
 
 
